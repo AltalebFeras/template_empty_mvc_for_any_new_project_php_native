@@ -1,0 +1,8 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine on
+  RewriteCond %{ENV:REDIRECT_STATUS} ^$
+  RewriteCond %{REQUEST_URI} !\.(css|js|jpg|jpeg|png|svg|webp|gif|ico|webmanifest|txt|text/html)$ [NC]
+  RewriteRule   (.*)  /index.php
+</IfModule>
+
+  ErrorDocument 404 /page-not-found
