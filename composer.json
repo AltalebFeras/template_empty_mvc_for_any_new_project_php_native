@@ -1,4 +1,13 @@
 {
+    "name": "AltalebFeras/template_empty_mvc_for_any_new_project_php_native",
+    "description": "Short description of your package",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "YourNamespace\\": "src/"
+        }
+    },
     "require": {
         "phpmailer/phpmailer": "^6.9",
         "firebase/php-jwt": "^6.10"
