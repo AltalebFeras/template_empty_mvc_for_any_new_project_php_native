@@ -21,7 +21,7 @@ switch ($route) {
     //     if ($method === 'POST') {
     //         $usersController->treatmentSignIn();
     //     } else {
-    //         if (isset($_SESSION['connected']) && ConfigRouter::checkConnection()) {
+    //         if (isset($_SESSION['connected']) && ConfigRouter::checkOriginConnection()) {
     //             $usersController->displayDashboard();
     //         } else {
     //             $homeController->displayFormSignIn();
@@ -30,7 +30,7 @@ switch ($route) {
     //     break;
 
     // case HOME_URL . 'dashboard':
-    //     if (isset($_SESSION['connected']) && ConfigRouter::checkConnection()) {
+    //     if (isset($_SESSION['connected']) && ConfigRouter::checkOriginConnection()) {
     //         // $usersController->displayDashboard();
     //     } else {
     //         $homeController->displayHomepage();

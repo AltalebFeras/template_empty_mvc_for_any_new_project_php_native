@@ -44,7 +44,7 @@ class ConfigRouter
      * because the PHP is limited and it is not cabable to identify which user who created the session  
      * @return bool
      */
-    public static function checkConnection(): bool
+    public static function checkOriginConnection(): bool
     {
         if (
             !isset($_SESSION['ip_address'], $_SESSION['user_agent']) ||

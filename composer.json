@@ -1,11 +1,11 @@
 {
     "name": "feras_altaleb/mvc_php",
-    "description": "Short description of your package",
+    "description": "MVC PHP Framework",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "YourNamespace\\": "src/"
+            "FerasAltaleb\\MvcPhp\\": "src/"
         }
     },
     "require": {

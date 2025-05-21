@@ -20,7 +20,7 @@ class Encrypt_decrypt
      */
     public function encryptId($id): string
     {
-        $key = 'd93vNg48Bqv7ZpxlA3YtP1mWcK0rJx9h';
+        $key = ENCRYPTION_KEY;
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
         $encrypted = openssl_encrypt($id, 'aes-256-cbc', $key, 0, $iv);
         $payload = json_encode([
@@ -46,7 +46,7 @@ class Encrypt_decrypt
 
     public function decryptId($data): bool|string
     {
-        $key = 'd93vNg48Bqv7ZpxlA3YtP1mWcK0rJx9h';
+        $key = ENCRYPTION_KEY;
         $decoded = base64_decode(urldecode($data), true);
         if ($decoded === false) return false;
 
