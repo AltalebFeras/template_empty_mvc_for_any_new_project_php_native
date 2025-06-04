@@ -1,6 +1,6 @@
 <?php
 
-namespace src\Models;
+namespace src\Entities;
 use src\Services\Hydration;
 class User
 {
