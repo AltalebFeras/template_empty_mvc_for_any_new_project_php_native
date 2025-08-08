@@ -24,12 +24,15 @@ trait Hydration
         $this->hydrate($data);
     }
 
-    private function hydrate(array $data)
+     private function hydrate(array $data): void
     {
         foreach ($data as $key => $value) {
-            $method = "set" . ucfirst($key);
-            if (method_exists($this, $method)) {
-                $this->$method(htmlspecialchars($value));
+            $parts = explode('_', $key);
+            $Parts = array_map('ucfirst', $parts);
+            $setter = "set" . implode('', $Parts);
+
+            if (method_exists($this, $setter)) {
+                $this->$setter($value);
             }
         }
     }

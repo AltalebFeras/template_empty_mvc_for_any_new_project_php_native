@@ -57,3 +57,45 @@ class Encrypt_decrypt
     }
 
 }
+
+
+// how it works 
+
+// Your encryption key (AES-256-CBC)
+$key = 'd93vNg48Bqv7ZpxlA3YtP1mWcK0rJx9h';
+
+// Your encrypted payloads example
+$payloads = [
+    'eyJpdiI6ImVQTTlIcmV2MnpiM1hCWE85ck93RUE9PSIsImRhdGEiOiIyU25SdTlySE5DRDdyV2d4TWt6MDBnPT0ifQ==',
+    'eyJpdiI6IlwvY0diZHpvcnhqd3B3N2VoZWJ6TDJnPT0iLCJkYXRhIjoiejNndGV4VzdHZnRFbUtCYlFFZXI1Zz09In0='
+];
+
+// Function to decrypt a Laravel-style payload
+function decryptPayload($payload, $key) {
+    // Decode Base64 JSON
+    $data = json_decode(base64_decode($payload), true);
+
+    if (!isset($data['iv']) || !isset($data['data'])) {
+        return null; // invalid format
+    }
+
+    // Replace escaped slashes in IV
+    $iv = base64_decode(str_replace('\\/', '/', $data['iv']));
+    $ciphertext = base64_decode($data['data']);
+
+    // Decrypt using AES-256-CBC
+    $plaintext = openssl_decrypt($ciphertext, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+
+    // Show the raw decrypted text
+    echo "Raw decrypted value: " . $plaintext . PHP_EOL;
+
+    return (int) $plaintext; // Convert to integer
+}
+
+// Process all payloads
+foreach ($payloads as $index => $payload) {
+    echo "Processing payload " . ($index + 1) . "..." . PHP_EOL;
+    $userId = decryptPayload($payload, $key);
+    echo "User ID (as integer): " . $userId . PHP_EOL;
+    echo str_repeat("-", 30) . PHP_EOL;
+}
