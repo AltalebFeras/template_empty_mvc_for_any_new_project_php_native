@@ -1,6 +1,6 @@
 {
     "name": "feras_altaleb/mvc_php",
-    "description": "MVC PHP Framework",
+    "description": "MVC PHP Small Framework",
     "type": "library",
     "license": "MIT",
     "autoload": {
