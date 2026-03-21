@@ -27,6 +27,7 @@ abstract class AbstractController
             extract($__data);
             include $__path;
         })($viewPath, $data);
+        exit();
     }
     /**
      * Redirect to a specified route with optional query parameters and error handling.

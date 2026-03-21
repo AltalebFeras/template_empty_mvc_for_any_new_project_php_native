@@ -2,14 +2,15 @@
 
 namespace src\Controllers;
 
+use src\Abstracts\AbstractController;
 use src\Services\Route;
 
-class HomeController
+class HomeController extends AbstractController
 {
     #[Route('/')]
     public function displayHomepage(): void
     {
-        include_once __DIR__ . '/../Views/home/home.php';
+        $this->render('home/home');
     }
 
     #[Route('/403')]
@@ -17,8 +18,7 @@ class HomeController
     {
         header("HTTP/1.1 403 Forbidden");
         header("Content-Type: text/html; charset=utf-8");
-        include_once __DIR__ . '/../Views/home/403.php';
-        exit();
+        $this->render('home/403');
     }
 
     #[Route('/404')]
@@ -26,8 +26,7 @@ class HomeController
     {
         header("HTTP/1.1 404 Not Found");
         header("Content-Type: text/html; charset=utf-8");
-        include_once __DIR__ . '/../Views/home/404.php';
-        exit();
+        $this->render('home/404');
     }
 
     #[Route('/500')]
@@ -35,7 +34,6 @@ class HomeController
     {
         http_response_code(500);
         header("Content-Type: text/html; charset=utf-8");
-        include_once __DIR__ . '/../Views/home/500.php';
-        exit();
+        $this->render('home/500');
     }
 }
