@@ -8,7 +8,7 @@
   <meta name="author" content="To identify">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="<?php echo DOMAIN . HOME_URL; ?>">
-  <link rel="stylesheet" href="<?php echo HOME_URL . 'assets/css/global.css'; ?>">
+  <link rel="stylesheet" href="<?php echo HOME_URL . 'assets/css/app.css'; ?>">
  <?php
   /** translation title */
   $translations = [
@@ -43,26 +43,6 @@
   <link rel="manifest" href="">
   <link rel="stylesheet" href=""> 
 -->
- 
-  <?php
-  $route = $_SERVER['REDIRECT_URL'];
-
-  // TODO Include CSS file based on current route. This is just a placeholder. Replace with your own logic.
-  switch ($route) {
-
-    case HOME_URL:
-      // echo '<link rel="stylesheet" href="' . HOME_URL . 'assets/css/accueil.css' . '">';
-      break;
-      // we can put more than one url for the same file css
-    case HOME_URL . 'signIn':
-    case HOME_URL . 'signUp':
-      // echo '<link rel="stylesheet" href="' . HOME_URL . 'assets/css/auth.css">';
-      break;
-    default:
-      echo '<link rel="stylesheet" href="' . HOME_URL . 'assets/css/404.css">';
-      break;
-  }
-  ?>
 </head>
 
 <body>

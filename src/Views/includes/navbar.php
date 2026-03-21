@@ -19,7 +19,7 @@
           <?php else : ?>
 
             <li>
-              <a class="btn linkNotDecorated" href="<?= HOME_URL . 'URI' ?>">LINK2</a>
+              <a class="btn btn-primary" href="<?= HOME_URL . 'URI' ?>">LINK2</a>
             </li>
           <?php endif; ?>
         </ul>
