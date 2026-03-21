@@ -9,20 +9,24 @@ abstract class AbstractController
     /**
      * Render a view file with the given data.
      *
-     * @param string $view The name of the view file and if it is in a folder should add the folder name like folder name/file name (without extension).
-     * @param array $data An associative array of data to pass to the view, it is empty by default.
-     * @return void
+     * Data is extracted inside an isolated closure scope so it cannot
+     * overwrite internal variables (e.g. a $view key in $data won't
+     * clobber the path resolution above).
+     *
+     * @param string $view The view path relative to Views/, without .php extension
+     *                     (e.g. 'home/home' or 'dashboard/dashboard').
+     * @param array  $data Associative array of variables to expose inside the view.
      */
-    public function render($view, array $data = []): void
+    public function render(string $view, array $data = []): void
     {
         $viewPath = __DIR__ . '/../Views/' . $view . '.php';
-        if (file_exists($viewPath)) {
-            extract($data);
-            include $viewPath;
-            // $this->unsetFormData();
-        } else {
+        if (!file_exists($viewPath)) {
             throw new Exception("View not found: {$view}");
         }
+        (function (string $__path, array $__data): void {
+            extract($__data);
+            include $__path;
+        })($viewPath, $data);
     }
     /**
      * Redirect to a specified route with optional query parameters and error handling.
@@ -33,7 +37,7 @@ abstract class AbstractController
      * @param mixed $errors Optional errors to store in the session; triggers error=true query param when not empty.
      * @return void
      */
-    public function redirect(string $route, array $query = [], mixed $errors = null): void
+    public function redirect(string $route, array $query = [], mixed $errors = null): never
     {
         if (!empty($errors)) {
             $_SESSION['errors'] = $errors;
