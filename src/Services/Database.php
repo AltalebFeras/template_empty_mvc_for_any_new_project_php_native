@@ -13,26 +13,26 @@ use PDOException;
  */
 final class Database
 {
-    private $DB;
-    private $config;
+    private ?PDO $DB = null;
 
     /**
      * Database constructor.
      *
-     * Loads the configuration file and attempts to establish a database connection using PDO.
-     * Catches and displays any connection errors.
+     * Establishes the PDO connection. Throws a RuntimeException on failure
+     * so the error propagates properly instead of being silently swallowed.
      */
 
     public function __construct()
     {
-        $this->config = __DIR__ . '/../../config.php';
-        require_once $this->config;
-
         try {
-            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME;
-            $this->DB = new PDO($dsn, DB_USER, DB_PWD, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+            $this->DB = new PDO($dsn, DB_USER, DB_PWD, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ]);
         } catch (PDOException $error) {
-            echo "Error while connecting to Database: " . $error->getMessage();
+            throw new \RuntimeException('Database connection failed: ' . $error->getMessage());
         }
     }
 

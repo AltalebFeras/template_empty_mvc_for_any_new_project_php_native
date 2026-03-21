@@ -9,10 +9,12 @@ namespace src\Services;
  * Also supports custom serialization and unserialization.
  *
  * - On construction, hydrates properties from an array using matching setters.
- * - Uses htmlspecialchars to sanitize values before setting.
  * - Supports dynamic property setting via __set().
  * - Serializes object by calling all public getters.
  * - Unserializes object by hydrating from an array.
+ *
+ * Note: values are NOT sanitized here — sanitize output in views using
+ * Validator::escape() or htmlspecialchars() when rendering user data.
  */
 
 trait Hydration

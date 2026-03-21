@@ -46,6 +46,7 @@ abstract class AbstractController
         if (!empty($query)) {
             $url .= '?' . http_build_query($query);
         }
+        http_response_code(302);
         header("Location: {$url}");
         exit();
     }
