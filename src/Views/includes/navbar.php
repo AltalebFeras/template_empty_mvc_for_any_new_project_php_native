@@ -1,6 +1,6 @@
     <!-- section header do not modify -->
     <header>
-      <nav class="navbar">
+      <nav class="navbar bg-grey d-flex align-items-center justify-content-between px-3">
         <div class="logo">
           <a href="/"><img
               src="<?= DOMAIN . HOME_URL . 'assets/imgs/logo.jpg' ?>"
@@ -8,9 +8,8 @@
               width="60"
               height="60" />
           </a>
-          <p class="logo_paragraph">LOGO</p>
         </div>
-        <ul class="nav-links">
+        <ul class="nav-links d-flex align-items-center gap-3 ">
           <li><a class="link" href="<?= HOME_URL  ?>">LINK1</a></li>
           <?php if (isset($_SESSION['connected'])) : ?>
             <li>

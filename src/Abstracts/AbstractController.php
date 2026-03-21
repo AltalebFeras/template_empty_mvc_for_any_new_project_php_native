@@ -2,7 +2,6 @@
 
 namespace src\Abstracts;
 
-use Error;
 use Exception;
 
 abstract class AbstractController
@@ -22,42 +21,32 @@ abstract class AbstractController
             include $viewPath;
             // $this->unsetFormData();
         } else {
-            throw new \Exception("View not found: {$view}");
+            throw new Exception("View not found: {$view}");
         }
     }
     /**
-     * Redirect to a specified route with optional query parameters.
-     **query error=true with this format array ['error' => 'true'] should be added to the URL for all error happen.
+     * Redirect to a specified route with optional query parameters and error handling.
+     * If $errors is provided and not empty, stores them in the session and appends error=true to the URL.
+     * If $errors is empty, unsets the session errors and redirects normally.
      * @param string $route The route exists and defined in the router to redirect to.
-     * @param array $query An associative array of query parameters to append to the URL , it is empty by default.
+     * @param array $query An associative array of query parameters to append to the URL, empty by default.
+     * @param mixed $errors Optional errors to store in the session; triggers error=true query param when not empty.
      * @return void
      */
-    public function redirect($route, array $query = []): void
+    public function redirect(string $route, array $query = [], mixed $errors = null): void
     {
+        if (!empty($errors)) {
+            $_SESSION['errors'] = $errors;
+            $query['error'] = 'true';
+        } else {
+            unset($_SESSION['errors']);
+        }
+
         $url = HOME_URL . $route;
         if (!empty($query)) {
             $url .= '?' . http_build_query($query);
         }
         header("Location: {$url}");
-        // $this->unsetFormData();
         exit();
-    }
-
-    /**
-     * Handle and redirect all errors to a specified route.
-     * This method checks if the $errors parameter is not empty, and if so, it stores the errors in the session and redirects to the specified route with an error query parameter.
-     * If the $errors parameter is empty, it unsets the 'errors' session variable.
-     * @param mixed $errors
-     * @param mixed $route
-     * @return void
-     */
-    public function returnAllErrors($errors, $route)
-    {
-        if (!empty($errors)) {
-            $_SESSION['errors'] = $errors;
-            $this->redirect($route, ['error' => 'true']);
-        } else {
-            unset($_SESSION['errors']);
-        }
     }
 }

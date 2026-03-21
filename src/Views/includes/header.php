@@ -9,7 +9,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="<?php echo DOMAIN . HOME_URL; ?>">
   <link rel="stylesheet" href="<?php echo HOME_URL . 'assets/css/app.css'; ?>">
- <?php
+  <?php
   /** translation title */
   $translations = [
     'home' => 'Accueil',
@@ -35,7 +35,7 @@
   <?php
   //TODO include  favicon links like 
   ?>
- <!--  
+  <!--  
   <link rel="icon" href="" type="image/x-icon">
   <link rel="apple-touch-icon" sizes="180x180" href="">
   <link rel="icon" type="image/png" sizes="32x32" href="">
