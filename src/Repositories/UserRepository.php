@@ -1,16 +1,29 @@
 <?php
 
 namespace src\Repositories;
-class UserRepository
+
+use src\Abstracts\AbstractRepository;
+
+/**
+ * UserRepository — inherits getAll, getById, create, updateById,
+ * deleteById, count, and getLastInsertId from AbstractRepository.
+ *
+ * The base class auto-maps this repository to the `users` table and
+ * the `src\Entities\User` entity via naming convention.
+ *
+ * Add custom query methods below as your project requires.
+ */
+class UserRepository extends AbstractRepository
 {
-    // private $DB;
-
-    // public function __construct()
+    // Example — find a user by email address:
+    // public function findByEmail(string $email): ?\src\Entities\User
     // {
-    //     $database = new Database;
-    //     $this->DB = $database->getDB();
-
-    //     require_once __DIR__ . '/../../config.php';
+    //     $stmt = $this->DB->prepare(
+    //         "SELECT * FROM users WHERE email = :email LIMIT 1"
+    //     );
+    //     $stmt->execute([':email' => $email]);
+    //     $result = $stmt->fetchObject(\src\Entities\User::class);
+    //     return $result ?: null;
     // }
- 
 }
+

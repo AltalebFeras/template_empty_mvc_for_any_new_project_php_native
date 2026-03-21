@@ -29,4 +29,13 @@ class HomeController
         include_once __DIR__ . '/../Views/home/404.php';
         exit();
     }
+
+    #[Route('/500')]
+    public function page500(): void
+    {
+        http_response_code(500);
+        header("Content-Type: text/html; charset=utf-8");
+        include_once __DIR__ . '/../Views/home/500.php';
+        exit();
+    }
 }

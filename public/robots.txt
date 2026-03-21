@@ -1,0 +1,39 @@
+# ============================================================
+#  robots.txt — Directives pour les robots d'indexation
+#  À modifier selon votre projet avant la mise en production.
+# ============================================================
+
+# --- Règles communes à tous les moteurs (Googlebot, Bingbot, etc.) ---
+# User-agent: *  désigne tous les robots non listés explicitement ci-dessous.
+User-agent: *
+Allow: /
+
+# Dossiers à exclure de l'indexation (adapter selon votre arborescence)
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /private/
+Disallow: /tmp/
+Disallow: /cgi-bin/
+Disallow: /src/
+Disallow: /vendor/
+
+# --- Robots d'images (pas besoin de bloquer les ressources statiques) ---
+User-agent: Googlebot-Image
+Allow: /
+
+# --- Bloquer les robots indésirables / scrapers agressifs ---
+# Décommenter et compléter selon vos besoins.
+# User-agent: SemrushBot
+# Disallow: /
+
+# User-agent: AhrefsBot
+# Disallow: /
+
+# User-agent: MJ12bot
+# Disallow: /
+
+# ============================================================
+#  Sitemap — Remplacer l'URL par celle de votre site
+# ============================================================
+Sitemap: https://votre-site.com/sitemap.xml
+

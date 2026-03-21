@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SITEMAP XML — À modifier selon votre projet avant la mise en production.
+
+    Déclarez ici toutes les URLs publiques importantes de votre site.
+
+    Attributs disponibles dans chaque balise <url> :
+    ┌─────────────┬────────────────────────────────────────────────────────────────┐
+    │ <loc>       │ URL absolue de la page (obligatoire)                           │
+    │ <lastmod>   │ Date de dernière modification au format YYYY-MM-DD             │
+    │ <changefreq>│ Fréquence estimée : always | hourly | daily | weekly |         │
+    │             │                    monthly | yearly | never                    │
+    │ <priority>  │ Priorité relative entre 0.0 (faible) et 1.0 (haute)           │
+    │             │ Valeur par défaut : 0.5                                        │
+    └─────────────┴────────────────────────────────────────────────────────────────┘
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+    <!-- Page d'accueil — priorité maximale, mise à jour fréquente -->
+    <url>
+        <loc>https://votre-site.com/</loc>
+        <lastmod>2026-01-01</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+
+    <!-- Exemple : page importante (formulaire, service principal, etc.) -->
+    <url>
+        <loc>https://votre-site.com/exemple-page</loc>
+        <lastmod>2026-01-01</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+
+    <!-- Exemple : page secondaire (contact, à propos, etc.) -->
+    <url>
+        <loc>https://votre-site.com/contact</loc>
+        <lastmod>2026-01-01</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
+    <!-- Exemple : page légale peu prioritaire -->
+    <url>
+        <loc>https://votre-site.com/mentions-legales</loc>
+        <lastmod>2026-01-01</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+    </url>
+
+</urlset>

@@ -2,10 +2,11 @@
 <?php include_once __DIR__ . '/../includes/navbar.php'; ?>
 
 <main>
-    <div class="d-flex justify-content-center align-items-center" >
+    <div class="d-flex flex-column justify-content-center align-items-center" >
 
-	<h1>404 PageNot Found</h1>
+	<h1>404 Introuvable</h1>
 	<p>Cette page n'existe pas.</p>
+    <a class="btn btn-secondary" href="/">Retour à l'accueil</a>
     </div>
 </main>
 

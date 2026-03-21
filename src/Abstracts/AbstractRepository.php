@@ -71,7 +71,7 @@ abstract class AbstractRepository
   public function create(array $data): bool
   {
     $data = $this->prepareData($data); 
-    $columns = implode(", ", array_keys($data));
+    $columns = implode(", ", array_map([$this, 'validateColumnKey'], array_keys($data)));
     $placeholders = implode(", ", array_map(fn($key)=> ":$key", array_keys($data)));
     $sql = "INSERT INTO $this->table ($columns) VALUES ($placeholders);";
     $stmt = $this->DB->prepare($sql);
@@ -91,13 +91,13 @@ abstract class AbstractRepository
   public function updateById(int $id, array $data): bool
   {
     $data = $this->prepareData($data);
-    $setClause = implode(", ", array_map(fn($key) => "$key = :$key", array_keys($data)));
+    $setClause = implode(", ", array_map(fn($key) => $this->validateColumnKey($key) . " = :$key", array_keys($data)));
     $sql = "UPDATE $this->table SET $setClause WHERE {$this->class}_id = :id;";
     $stmt = $this->DB->prepare($sql);
     foreach ($data as $key => $value) {
         $stmt->bindValue(":$key", $value);
     }
-    $stmt->bindValue(':id', $id);
+    $stmt->bindValue(':id', $id, PDO::PARAM_INT);
     return $stmt->execute();
   }
 
@@ -145,5 +145,20 @@ abstract class AbstractRepository
         }
     }
     return $data;
+  }
+
+  /**
+   * Validates that a column key contains only safe identifier characters.
+   * Throws if the key does not match ^[a-zA-Z_][a-zA-Z0-9_]*$ to prevent
+   * SQL injection through crafted array keys in create() / updateById().
+   *
+   * @throws \InvalidArgumentException
+   */
+  private function validateColumnKey(string $key): string
+  {
+    if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)) {
+        throw new \InvalidArgumentException("Invalid column name: '{$key}'");
+    }
+    return $key;
   }
 }

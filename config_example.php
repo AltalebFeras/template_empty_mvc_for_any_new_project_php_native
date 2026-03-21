@@ -1,13 +1,14 @@
 <?php
-error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
-ini_set('display_errors', 1);
-
 define('SERVER_NAME', "YOUR_SERVER_NAME_LIKE: feras.fr");
 define('ENCRYPTION_KEY', "YOUR_ENCRYPTION_KEY");    // 32 characters
 
-// Check if the server is running on the production server  (feras.fr)  and define the necessary configurations.  Otherwise, use the local development server configurations.  Also, define the constants for the domain name, home URL, and the mail connection details.  Finally, set the error reporting level to E_ALL, and display errors in the development environment.  Finally, define the slug constant.  Note: Replace the placeholders with your actual database connection details and email configuration.
+// Detect the environment from DOCUMENT_ROOT and set all environment-specific constants.
 if (strpos($_SERVER["DOCUMENT_ROOT"], SERVER_NAME) !== false) {
     define('IS_PROD', TRUE);
+    // Production: never expose errors to the browser.
+    error_reporting(0);
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
     // Database connection
     define("DB_HOST", "");
     define("DB_PORT", "");
@@ -28,6 +29,9 @@ if (strpos($_SERVER["DOCUMENT_ROOT"], SERVER_NAME) !== false) {
     define('SENDER', '');
 } else {
     define('IS_PROD', FALSE);
+    // Development: show all errors so issues are caught early.
+    error_reporting(E_ALL);
+    ini_set('display_errors', '1');
     // Database connection
     define("DB_HOST", "");
     define("DB_PORT", "");

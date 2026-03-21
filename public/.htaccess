@@ -1,8 +1,99 @@
-<IfModule mod_rewrite.c>
-  RewriteEngine on
-  RewriteCond %{ENV:REDIRECT_STATUS} ^$
-  RewriteCond %{REQUEST_URI} !\.(css|js|jpg|jpeg|png|svg|webp|gif|ico|webmanifest|txt|text/html)$ [NC]
-  RewriteRule   (.*)  index.php
+# ============================================================
+#  CONFIGURATION APACHE — NE PAS VERSIONNER SANS REVUE
+# ============================================================
+
+# --- Désactiver le listage des répertoires et la négociation de contenu ---
+Options -Indexes -MultiViews
+
+# --- Jeu de caractères par défaut ---
+AddDefaultCharset UTF-8
+
+# ============================================================
+#  REDIRECTION HTTPS (décommenter en production)
+# ============================================================
+# <IfModule mod_rewrite.c>
+#   RewriteEngine On
+#   RewriteCond %{HTTPS} off
+#   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
+
+# ============================================================
+#  EN-TÊTES DE SÉCURITÉ
+# ============================================================
+<IfModule mod_headers.c>
+    # Empêche le sniffing de type MIME (évite les attaques XSS par type MIME)
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Empêche l'intégration dans un <iframe> — protection clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Contrôle les informations d'origine envoyées dans l'en-tête Referer
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Désactive les fonctionnalités navigateur inutilisées
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+    # Force HTTPS pendant 1 an + sous-domaines (décommenter en production uniquement)
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+    # Politique de sécurité du contenu — à adapter selon vos ressources externes
+    # Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+
+    # Supprimer l'en-tête qui expose la version PHP
+    Header unset X-Powered-By
+    Header always unset X-Powered-By
 </IfModule>
 
-  ErrorDocument 404 /page-not-found
+# ============================================================
+#  COMPRESSION GZIP (réduit le poids des réponses)
+# ============================================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml application/xml application/rss+xml
+    AddOutputFilterByType DEFLATE font/woff2 font/woff font/ttf
+</IfModule>
+
+# ============================================================
+#  CACHE NAVIGATEUR POUR LES RESSOURCES STATIQUES
+# ============================================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Images — mises en cache 1 an
+    ExpiresByType image/jpeg             "access plus 1 year"
+    ExpiresByType image/png              "access plus 1 year"
+    ExpiresByType image/webp             "access plus 1 year"
+    ExpiresByType image/gif              "access plus 1 year"
+    ExpiresByType image/svg+xml          "access plus 1 year"
+    ExpiresByType image/x-icon           "access plus 1 year"
+
+    # CSS / JS — mises en cache 1 mois
+    ExpiresByType text/css               "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+
+    # Polices — mises en cache 1 an
+    ExpiresByType font/woff2             "access plus 1 year"
+    ExpiresByType font/woff              "access plus 1 year"
+
+    # JSON / XML / HTML — jamais mis en cache
+    ExpiresByType application/json       "access plus 0 seconds"
+    ExpiresByType text/html              "access plus 0 seconds"
+</IfModule>
+
+# ============================================================
+#  ROUTAGE — TOUT REDIRIGE VERS index.php SAUF LES ASSETS
+# ============================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteCond %{REQUEST_URI} !\.(css|js|jpg|jpeg|png|svg|webp|gif|ico|woff|woff2|ttf|webmanifest|txt|xml)$ [NC]
+    RewriteRule (.*) index.php [L]
+</IfModule>
+
+# ============================================================
+#  PAGES D'ERREUR PERSONNALISÉES
+# ============================================================
+ErrorDocument 403 /403
+ErrorDocument 404 /404
+ErrorDocument 500 /500
