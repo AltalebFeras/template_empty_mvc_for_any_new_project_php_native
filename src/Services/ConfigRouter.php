@@ -5,44 +5,39 @@ namespace src\Services;
 class ConfigRouter
 {
     /**
-     * Retrieves the HTTP request method.
+     * Returns the effective HTTP method for the current request.
      *
-     * This function returns the request method from the server (e.g., GET, POST).
-     * If the request method is POST and a spoofed method is provided in 
-     * the `_POST['_method']` field, it overrides the method accordingly.
+     * HTML forms only support GET/POST. To use DELETE, PUT, PATCH from a form,
+     * add a hidden field: <input type="hidden" name="_method" value="DELETE">
+     * The real request must be POST, and _method overrides it.
      *
-     * Supported override values: 'GET', 'POST', 'DELETE'.
+     * Supported spoofed values: GET, POST, PUT, PATCH, DELETE.
      *
-     * @return string The effective HTTP request method.
+     * @return string Uppercase HTTP method (e.g. 'GET', 'POST', 'DELETE').
      */
-
     public static function getMethod(): string
     {
-        $method = $_SERVER['REQUEST_METHOD'];
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
-        if ($method === "POST" && isset($_POST['_method']) && !empty($_POST['_method'])) {
-            switch ($_POST['_method']) {
-                case 'DELETE':
-                case 'POST':
-                    $method = "POST";
-                    break;
-                case 'GET':
-                    $method = "GET";
-                    break;
-                default:
-                    //
-                    break;
+        if ($method === 'POST' && !empty($_POST['_method'])) {
+            $spoofed = strtoupper($_POST['_method']);
+            $allowed = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+            if (in_array($spoofed, $allowed, true)) {
+                $method = $spoofed;
             }
         }
 
         return $method;
     }
+
     /**
-     * 
-     * It is for the purpose of checking the connection of the user in case of the session id stolen by another user "hacker"
-     * sadly, to avoid any further actions we have to destroy the session for the both users with that session id
-     * because the PHP is limited and it is not cabable to identify which user who created the session  
-     * @return bool
+     * Checks that the current session belongs to the same browser/IP that created it.
+     *
+     * Because PHP cannot distinguish which client owns a stolen session ID, both
+     * sessions are destroyed on mismatch. Returns false instead of redirecting so
+     * the caller decides how to react.
+     *
+     * @return bool True if the session origin is valid, false otherwise.
      */
     public static function checkOriginConnection(): bool
     {
@@ -56,10 +51,68 @@ class ConfigRouter
                 session_start();
             }
             $_SESSION['error'] = 'Votre session est expirée! veuillez vous reconnecter.';
-            header('Location: ' . HOME_URL . 'signIn');
-            exit();
+            return false;
         }
 
         return true;
+    }
+
+    /**
+     * Redirects to the given URL and stops execution.
+     *
+     * @param string $url  Absolute or relative URL.
+     * @param int    $code HTTP status code (default 302).
+     */
+    public static function redirect(string $url, int $code = 302): never
+    {
+        http_response_code($code);
+        header('Location: ' . $url);
+        exit();
+    }
+
+    /**
+     * Returns true if the request was made via XMLHttpRequest / fetch with the
+     * standard header (axios, jQuery $.ajax, and most fetch wrappers send it).
+     */
+    public static function isAjax(): bool
+    {
+        return ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest';
+    }
+
+    /**
+     * Returns true if the request is served over HTTPS.
+     */
+    public static function isHttps(): bool
+    {
+        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || ($_SERVER['SERVER_PORT'] ?? '') === '443';
+    }
+
+    /**
+     * Returns the real client IP, taking common reverse-proxy headers into account.
+     * Falls back to REMOTE_ADDR.
+     *
+     * ⚠️  X-Forwarded-For can be spoofed by clients — only trust it if your server
+     *     sits behind a known reverse proxy (nginx, load balancer, etc.).
+     */
+    public static function getClientIp(): string
+    {
+        $candidates = [
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'REMOTE_ADDR',
+        ];
+
+        foreach ($candidates as $key) {
+            if (!empty($_SERVER[$key])) {
+                // X-Forwarded-For may contain a comma-separated list; take the first.
+                $ip = trim(explode(',', $_SERVER[$key])[0]);
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        return '0.0.0.0';
     }
 }

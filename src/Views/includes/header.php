@@ -13,8 +13,8 @@
   /** translation title */
   $translations = [
     'home' => 'Accueil',
-    'signUp' => 'Inscription',
-    'signIn' => 'Connexion',
+    'register' => 'Inscription',
+    'login' => 'Connexion',
   ];
 
   $title = '';

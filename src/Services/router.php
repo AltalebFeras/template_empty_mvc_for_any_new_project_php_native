@@ -1,49 +1,50 @@
 <?php
 
 use src\Controllers\HomeController;
-use src\Controllers\UserController;
 use src\Services\ConfigRouter;
+use src\Services\Route;
 
-$homeController = new HomeController();
-$usersController = new UserController();
-
-$route = $_SERVER['REDIRECT_URL'] ?? '/';
+$route  = $_SERVER['REDIRECT_URL'] ?? '/';
 $method = ConfigRouter::getMethod();
-// var_dump($_SERVER);
 
-switch ($route) {
+// Auto-discover all routes defined via #[Route] attributes in every controller.
+$controllerDir = __DIR__ . '/../Controllers';
+$dispatched    = false;
 
-    case HOME_URL:
-        $homeController->displayHomepage();
-        break;
-        //TODO EDIT THE EXAMPLE FOR POST AND GET METHOD
-    // case HOME_URL . 'signIn':
-    //     if ($method === 'POST') {
-    //         $usersController->treatmentSignIn();
-    //     } else {
-    //         if (isset($_SESSION['connected']) && ConfigRouter::checkOriginConnection()) {
-    //             $usersController->displayDashboard();
-    //         } else {
-    //             $homeController->displayFormSignIn();
-    //         }
-    //     }
-    //     break;
+foreach (glob($controllerDir . '/*.php') as $file) {
+    $className = 'src\\Controllers\\' . basename($file, '.php');
 
-    // case HOME_URL . 'dashboard':
-    //     if (isset($_SESSION['connected']) && ConfigRouter::checkOriginConnection()) {
-    //         // $usersController->displayDashboard();
-    //     } else {
-    //         $homeController->displayHomepage();
-    //     }
-    //     break;
+    // Trigger PSR-4 autoloading for this controller class.
+    if (!class_exists($className)) {
+        continue;
+    }
 
-    case HOME_URL . '403':
-        $homeController->page403();
-        break;
-    case HOME_URL . '404':
-        $homeController->page404();
-        break;
-    default:
-        $homeController->page404();
-        break;
+    $reflectionClass = new ReflectionClass($className);
+
+    foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $reflectionMethod) {
+        foreach ($reflectionMethod->getAttributes(Route::class) as $attribute) {
+            /** @var Route $routeAttr */
+            $routeAttr = $attribute->newInstance();
+
+            // Match path and HTTP method.
+            if ($routeAttr->path !== $route || !in_array($method, $routeAttr->methods)) {
+                continue;
+            }
+
+            // Optional authentication guard.
+            if ($routeAttr->authRequired) {
+                if (!isset($_SESSION['connected']) || !ConfigRouter::checkOriginConnection()) {
+                    ConfigRouter::redirect(HOME_URL . 'login');
+                }
+            }
+
+            $reflectionMethod->invoke(new $className());
+            $dispatched = true;
+            break 3;
+        }
+    }
+}
+
+if (!$dispatched) {
+    (new HomeController())->page404();
 }
