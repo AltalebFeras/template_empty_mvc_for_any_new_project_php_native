@@ -27,6 +27,7 @@ Comprehensive technical documentation for the Enterprise PHP MVC Framework Templ
 | 19 | [Testing](19-testing.md) | PHPUnit, PHPStan, test writing guide |
 | 20 | [Cloudflare Turnstile](20-turnstile.md) | Bot protection setup and verification |
 | 21 | [Entities & Hydration](21-entities-hydration.md) | Entity pattern, Hydration trait |
+| 22 | [Shared Hosting Deployment](22-shared-hosting-deployment.md) | Deployment guide for cPanel/Plesk without Docker |
 | — | [Security Runbook](../SECURITY.md) | Operational security procedures |
 
 ## Quick Links

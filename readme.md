@@ -21,7 +21,7 @@ A hyper-secure, high-performance native PHP MVC application template designed fo
 - [Caching](#caching)
 - [Background Jobs](#background-jobs)
 - [Cloudflare Turnstile](#cloudflare-turnstile)
-- [Docker Deployment](#docker-deployment)
+- [Deployment (Shared Hosting vs Docker)](#deployment-shared-hosting-vs-docker)
 - [Web Server Configuration](#web-server-configuration)
 - [Testing](#testing)
 - [Maintenance](#maintenance)
