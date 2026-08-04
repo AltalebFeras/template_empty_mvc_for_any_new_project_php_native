@@ -107,7 +107,7 @@ class UserController extends AbstractController
      * POST /logout — destroy session and redirect.
      */
     #[Route('/logout', methods: ['POST'])]
-    public function logout(): never
+    public function logout(): void
     {
         $userId = $_SESSION['user_id'] ?? null;
 
