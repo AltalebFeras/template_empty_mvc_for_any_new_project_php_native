@@ -33,17 +33,8 @@
 
   ?>
   <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></title>
-  <?php
-  //TODO include  favicon links like 
-  ?>
-  <!--  
-  <link rel="icon" href="" type="image/x-icon">
-  <link rel="apple-touch-icon" sizes="180x180" href="">
-  <link rel="icon" type="image/png" sizes="32x32" href="">
-  <link rel="icon" type="image/png" sizes="16x16" href="">
-  <link rel="manifest" href="">
-  <link rel="stylesheet" href=""> 
--->
+  <link rel="icon" href="https://favicon.pub/php.net" type="image/x-icon">
+  <link rel="shortcut icon" href="https://favicon.pub/php.net" type="image/x-icon">
 </head>
 
 <body>
