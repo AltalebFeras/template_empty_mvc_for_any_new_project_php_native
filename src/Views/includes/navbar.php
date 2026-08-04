@@ -3,7 +3,7 @@
       <nav class="navbar bg-grey d-flex align-items-center justify-content-between px-3">
         <div class="logo">
           <a href="/"><img
-              src="<?= \App\Services\Config::baseUrl() . '/assets/imgs/logo.jpg' ?>"
+              src="<?= \App\Services\Config::baseUrl() . '/assets/imgs/logo.webp' ?>"
               alt="Logo"
               width="60"
               height="60" />

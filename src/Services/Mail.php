@@ -231,7 +231,7 @@ final class Mail
     ): void {
         try {
             $siteUrl  = Config::baseUrl() . '/';
-            $logoPath = $siteUrl . 'assets/imgs/logo.jpg';
+            $logoPath = $siteUrl . 'assets/imgs/logo.webp';
 
             $this->mail->setFrom($from, $fromName);
             $this->mail->addAddress($to, $toName);
