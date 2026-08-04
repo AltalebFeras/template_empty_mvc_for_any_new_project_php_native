@@ -1,7 +1,10 @@
 <?php
 
-namespace src\Services;
+namespace App\Services;
 
+/**
+ * ConfigRouter — request helpers for routing and session verification.
+ */
 class ConfigRouter
 {
     /**
@@ -10,8 +13,6 @@ class ConfigRouter
      * HTML forms only support GET/POST. To use DELETE, PUT, PATCH from a form,
      * add a hidden field: <input type="hidden" name="_method" value="DELETE">
      * The real request must be POST, and _method overrides it.
-     *
-     * Supported spoofed values: GET, POST, PUT, PATCH, DELETE.
      *
      * @return string Uppercase HTTP method (e.g. 'GET', 'POST', 'DELETE').
      */
@@ -50,7 +51,7 @@ class ConfigRouter
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
-            $_SESSION['error'] = 'Votre session est expirée! veuillez vous reconnecter.';
+            $_SESSION['error'] = 'Your session has expired. Please log in again.';
             return false;
         }
 
@@ -71,8 +72,7 @@ class ConfigRouter
     }
 
     /**
-     * Returns true if the request was made via XMLHttpRequest / fetch with the
-     * standard header (axios, jQuery $.ajax, and most fetch wrappers send it).
+     * Returns true if the request was made via XMLHttpRequest / fetch.
      */
     public static function isAjax(): bool
     {
@@ -90,10 +90,8 @@ class ConfigRouter
 
     /**
      * Returns the real client IP, taking common reverse-proxy headers into account.
-     * Falls back to REMOTE_ADDR.
      *
-     * ⚠️  X-Forwarded-For can be spoofed by clients — only trust it if your server
-     *     sits behind a known reverse proxy (nginx, load balancer, etc.).
+     * ⚠️  X-Forwarded-For can be spoofed — only trust it behind a known reverse proxy.
      */
     public static function getClientIp(): string
     {
@@ -105,7 +103,6 @@ class ConfigRouter
 
         foreach ($candidates as $key) {
             if (!empty($_SERVER[$key])) {
-                // X-Forwarded-For may contain a comma-separated list; take the first.
                 $ip = trim(explode(',', $_SERVER[$key])[0]);
                 if (filter_var($ip, FILTER_VALIDATE_IP)) {
                     return $ip;

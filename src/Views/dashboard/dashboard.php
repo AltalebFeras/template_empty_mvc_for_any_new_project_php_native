@@ -5,10 +5,10 @@
 <main>
     <h1>dashboard</h1>
 
-    <p class="card">Bonjour <?= $_SESSION['firstName'] ?></p>
+    <p class="card">Bonjour <?= htmlspecialchars($_SESSION['firstName'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
     <?php include_once __DIR__ . '/../includes/messages.php'; ?>
     <div class="m">
-        <a href="<?= HOME_URL . "all_lists" ?>" class="btn linkNotDecorated">Toutes les listes</a>
+        <a href="<?= \App\Services\Config::baseUrl() . '/all_lists' ?>" class="btn linkNotDecorated">Toutes les listes</a>
     </div>
 
 </main>

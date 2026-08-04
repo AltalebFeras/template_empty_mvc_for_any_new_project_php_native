@@ -1,2 +1,35 @@
+# Environment & secrets
+.env
 config.php
+
+# Dependencies
 /vendor/
+
+# Storage (uploads, cache)
+/storage/uploads/*
+/storage/cache/*
+!/storage/uploads/.gitkeep
+!/storage/cache/.gitkeep
+
+# Logs
+/logs/*
+!/logs/.gitkeep
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+Thumbs.db
+.DS_Store
+
+# Composer
+composer.lock
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/
+
+# PHPStan
+phpstan-baseline.neon

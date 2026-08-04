@@ -1,17 +1,12 @@
 <?php
 
-namespace src\Services;
+namespace App\Services;
 
 /**
  * Trait Hydration
  *
  * Provides automatic hydration of object properties using setter methods.
  * Also supports custom serialization and unserialization.
- *
- * - On construction, hydrates properties from an array using matching setters.
- * - Supports dynamic property setting via __set().
- * - Serializes object by calling all public getters.
- * - Unserializes object by hydrating from an array.
  *
  * Note: values are NOT sanitized here — sanitize output in views using
  * Validator::escape() or htmlspecialchars() when rendering user data.

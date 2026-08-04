@@ -1,6 +1,6 @@
 <?php
 
-namespace src\Abstracts;
+namespace App\Abstracts;
 
 use Exception;
 
@@ -29,6 +29,7 @@ abstract class AbstractController
         })($viewPath, $data);
         exit();
     }
+
     /**
      * Redirect to a specified route with optional query parameters and error handling.
      * If $errors is provided and not empty, stores them in the session and appends error=true to the URL.
@@ -47,7 +48,9 @@ abstract class AbstractController
             unset($_SESSION['errors']);
         }
 
-        $url = HOME_URL . $route;
+        $baseUrl = \App\Services\Config::baseUrl();
+        $url     = $baseUrl . '/' . ltrim($route, '/');
+
         if (!empty($query)) {
             $url .= '?' . http_build_query($query);
         }

@@ -6,7 +6,7 @@
 
 	<h1>404 Introuvable</h1>
 	<p>Cette page n'existe pas.</p>
-    <a class="btn btn-secondary" href="/">Retour à l'accueil</a>
+    <a class="btn btn-secondary" href="<?= \App\Services\Config::baseUrl() ?>/">Retour à l'accueil</a>
     </div>
 </main>
 

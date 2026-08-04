@@ -1,17 +1,41 @@
 {
     "name": "feras_altaleb/mvc_php",
-    "description": "MVC PHP Small Framework",
-    "type": "library",
+    "description": "Enterprise-Ready PHP MVC Framework Template",
+    "type": "project",
     "license": "MIT",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
-            "src\\": "src/"
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
         }
     },
     "require": {
-        "phpmailer/phpmailer": "^6.9"
+        "php": ">=8.2",
+        "vlucas/phpdotenv": "^5.6",
+        "phpmailer/phpmailer": "^6.9",
+        "monolog/monolog": "^3.0",
+        "predis/predis": "^2.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^12.1"
+        "phpunit/phpunit": "^12.1",
+        "phpstan/phpstan": "^2.0"
+    },
+    "scripts": {
+        "test": "phpunit --colors=always",
+        "analyse": "phpstan analyse src/ --level=6",
+        "migrate": "php bin/migrate.php up",
+        "migrate:down": "php bin/migrate.php down",
+        "migrate:status": "php bin/migrate.php status",
+        "worker": "php bin/worker.php"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
     }
 }

@@ -1,7 +1,9 @@
 <?php
 
-namespace src\Entities;
-use src\Services\Hydration;
+namespace App\Entities;
+
+use App\Services\Hydration;
+
 class User
 {
     private int $userId;

@@ -7,8 +7,8 @@
   <meta name="description" content="the description of the website">
   <meta name="author" content="To identify">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="<?php echo DOMAIN . HOME_URL; ?>">
-  <link rel="stylesheet" href="<?php echo HOME_URL . 'assets/css/app.css'; ?>">
+  <link rel="canonical" href="<?= htmlspecialchars(\App\Services\Config::baseUrl(), ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="stylesheet" href="<?= \App\Services\Config::baseUrl() . '/assets/css/app.css' ?>">
   <?php
   /** translation title */
   $translations = [
@@ -18,8 +18,9 @@
   ];
 
   $title = '';
-  $title = explode('/', trim($_SERVER['REDIRECT_URL']));
-  $title = $title[1];
+  $redirectUrl = $_SERVER['REDIRECT_URL'] ?? '/';
+  $parts = explode('/', trim($redirectUrl, '/'));
+  $title = $parts[0] ?? '';
 
   if (empty($title)) {
     $title = 'Accueil';
@@ -31,7 +32,7 @@
   }
 
   ?>
-  <title><?= $title ?></title>
+  <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></title>
   <?php
   //TODO include  favicon links like 
   ?>

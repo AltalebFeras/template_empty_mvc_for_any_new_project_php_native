@@ -1,6 +1,6 @@
 <?php
 
-namespace src\Services;
+namespace App\Services;
 
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -16,7 +16,7 @@ use PHPMailer\PHPMailer\PHPMailer;
  *
  * Usage:
  *   $mailer = new Mail();
- *   $mailer->sendEmail(FROM_EMAIL, 'Site', $to, $name, 'Bienvenue', 'Votre compte est actif.');
+ *   $mailer->sendEmail(Config::get('MAIL_FROM_ADDRESS'), 'Site', $to, $name, 'Welcome', 'Your account is active.');
  */
 final class Mail
 {
@@ -35,17 +35,21 @@ final class Mail
     private function configureSMTP(): void
     {
         $this->mail->isSMTP();
-        $this->mail->Host     = HOST;
+        $this->mail->Host     = Config::get('MAIL_HOST', '');
         $this->mail->SMTPAuth = true;
-        $this->mail->Port     = PORT;
-        $this->mail->Username = USERNAME;
-        $this->mail->Password = PASSWORD;
+        $this->mail->Port     = Config::getInt('MAIL_PORT', 587);
+        $this->mail->Username = Config::get('MAIL_USERNAME', '');
+        $this->mail->Password = Config::get('MAIL_PASSWORD', '');
         $this->mail->CharSet  = 'UTF-8';
 
         // Production: port 465 → implicit TLS (SMTPS).
         // Development: no encryption so a local relay (Mailpit, Mailtrap…) works.
-        if (defined('IS_PROD') && IS_PROD) {
-            $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;   // 'ssl'
+        $encryption = Config::get('MAIL_ENCRYPTION', 'tls');
+        if (Config::isProduction()) {
+            $this->mail->SMTPSecure = match ($encryption) {
+                'ssl'   => PHPMailer::ENCRYPTION_SMTPS,
+                default => PHPMailer::ENCRYPTION_STARTTLS,
+            };
         } else {
             $this->mail->SMTPSecure = '';
             $this->mail->SMTPAutoTLS = false;
@@ -55,15 +59,6 @@ final class Mail
     /**
      * Builds a table-based HTML email that renders consistently across all
      * major email clients, including Outlook (Word rendering engine).
-     *
-     * Rules applied:
-     * - No <div> wrappers — every layout block is a <table>/<tr>/<td>.
-     * - Every style is inline — no external stylesheet, no <style> block.
-     * - bgcolor attribute on <td> in addition to CSS background-color
-     *   (Outlook ignores CSS backgrounds on table cells without bgcolor).
-     * - No border-radius, box-shadow, flexbox, or grid.
-     * - Fonts declared inline on every element (Outlook resets inherited fonts).
-     * - Plain-text fallback is set automatically by PHPMailer via AltBody.
      */
     private function generateTemplate(
         string $siteUrl,
@@ -169,13 +164,13 @@ final class Mail
                                               font-size:13px;
                                               color:#ccddee;
                                               line-height:1.5;">
-                                        &copy; {$year} — Tous droits r&eacute;serv&eacute;s.
+                                        &copy; {$year} — All rights reserved.
                                     </p>
                                     <p style="margin:6px 0 0 0;
                                               font-family:Arial,Helvetica,sans-serif;
                                               font-size:11px;
                                               color:#8aaabb;">
-                                        Vous recevez cet e-mail car vous &ecirc;tes inscrit(e) sur notre site.
+                                        You are receiving this email because you are registered on our site.
                                     </p>
                                 </td>
                             </tr>
@@ -235,7 +230,7 @@ final class Mail
         array  $headers = []
     ): void {
         try {
-            $siteUrl  = DOMAIN . HOME_URL;
+            $siteUrl  = Config::baseUrl() . '/';
             $logoPath = $siteUrl . 'assets/imgs/logo.jpg';
 
             $this->mail->setFrom($from, $fromName);
@@ -253,7 +248,10 @@ final class Mail
 
             $this->mail->send();
         } catch (Exception $e) {
-            error_log('Mailer Error: ' . $this->mail->ErrorInfo);
+            Logger::channel('mail')->error('Mail send failed', [
+                'to'    => $to,
+                'error' => $this->mail->ErrorInfo,
+            ]);
             throw new \RuntimeException('Failed to send email: ' . $e->getMessage());
         }
     }

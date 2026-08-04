@@ -1,164 +1,301 @@
 <?php
 
-namespace src\Abstracts;
+namespace App\Abstracts;
 
+use Generator;
 use PDO;
-use src\Services\Database;
+use App\Services\Database;
 
 /**
- * Abstract model of the repositories. Contains the following methods for all:
- * - getAll
- * - getById
- * - create
- * - updateById
- * - deleteById
+ * Abstract Repository — base class for all entity repositories.
+ *
+ * Provides:
+ * - CRUD operations with prepared statements
+ * - Transaction helpers (beginTransaction, commit, rollBack, transaction)
+ * - Generator-based streaming for large result sets
+ * - Ownership verification for IDOR prevention
+ * - Column key validation against SQL injection
+ *
+ * Convention: A repository named `UserRepository` auto-maps to
+ * table `users` and entity `App\Entities\User`.
  */
 abstract class AbstractRepository
 {
-  protected PDO $DB;
-  private string $model;
-  private string $class;
-  private string $table;
+    protected PDO $DB;
+    private string $class;
+    private string $table;
 
-  public function __construct()
-  {
-    $database = new Database();
-    $this->DB = $database->getDB();
+    public function __construct()
+    {
+        $this->DB = Database::getInstance();
 
-    $this->model = get_class($this);
-    $this->class = str_replace(['src\\Repositories\\', 'Repository'], '', $this->model);
-    $this->table = strtolower($this->class) . 's';
-  }
-
-  /**
-   * Method to retrieve all records from a given repository
-   *
-   * @return array<object> Returns an array of objects
-   */
-  public function getAll(): array
-  {
-    $sql = "SELECT * FROM $this->table;";
-    $stmt = $this->DB->prepare($sql);
-    $stmt->execute();
-
-    return $stmt->fetchAll(PDO::FETCH_CLASS, "src\\Entities\\{$this->class}");
-  }
-
-  /**
-   * Method to retrieve a record by its ID
-   *
-   * @param int $id The ID of the record to retrieve
-   * @return object|null The entity object, or null if not found
-   */
-  public function getById(int $id): object|null
-  {
-    $sql = "SELECT * FROM $this->table WHERE {$this->class}_id = :id;";
-    $stmt = $this->DB->prepare($sql);
-    $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-    $stmt->execute();
-
-    $result = $stmt->fetchObject("src\\Entities\\{$this->class}");
-    return $result ?: null;
-  }
-
-
-  /**
-   * Method to create a new record
-   *
-   * @param array $data The data to insert into the record
-   * @return bool Returns true on success, false on failure
-   */
-  public function create(array $data): bool
-  {
-    $data = $this->prepareData($data); 
-    $columns = implode(", ", array_map([$this, 'validateColumnKey'], array_keys($data)));
-    $placeholders = implode(", ", array_map(fn($key)=> ":$key", array_keys($data)));
-    $sql = "INSERT INTO $this->table ($columns) VALUES ($placeholders);";
-    $stmt = $this->DB->prepare($sql);
-    foreach ($data as $key => $value) {
-        $stmt->bindValue(":$key", $value);
+        // Derive entity class and table name from the repository class name.
+        $model       = get_class($this);
+        $this->class = str_replace(['App\\Repositories\\', 'Repository'], '', $model);
+        $this->table = strtolower($this->class) . 's';
     }
-    return $stmt->execute();
-  }
 
-  /**
-   * Method to update a record by its ID
-   *
-   * @param int $id The ID of the record to update
-   * @param array $data The data to update in the record
-   * @return bool Returns true on success, false on failure
-   */
-  public function updateById(int $id, array $data): bool
-  {
-    $data = $this->prepareData($data);
-    $setClause = implode(", ", array_map(fn($key) => $this->validateColumnKey($key) . " = :$key", array_keys($data)));
-    $sql = "UPDATE $this->table SET $setClause WHERE {$this->class}_id = :id;";
-    $stmt = $this->DB->prepare($sql);
-    foreach ($data as $key => $value) {
-        $stmt->bindValue(":$key", $value);
-    }
-    $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-    return $stmt->execute();
-  }
+    // -----------------------------------------------------------------------
+    // READ operations
+    // -----------------------------------------------------------------------
 
     /**
-   * Method to delete a record by its ID
-   *
-   * @param int $id The ID of the record to delete
-   * @return bool Returns true on success, false on failure
-   */
-  public function deleteById(int $id): bool
-  {
-    $sql = "DELETE FROM $this->table WHERE {$this->class}_id = :id;";
-    $stmt = $this->DB->prepare($sql);
-    $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-    return $stmt->execute();
-  }
+     * Retrieves all records from the table.
+     *
+     * @return array<object> Array of entity objects.
+     */
+    public function getAll(): array
+    {
+        $sql  = "SELECT * FROM `{$this->table}`";
+        $stmt = $this->DB->prepare($sql);
+        $stmt->execute();
 
-  /**
-   * Returns the total number of records in the table.
-   *
-   * @return int
-   */
-  public function count(): int
-  {
-    $sql = "SELECT COUNT(*) FROM $this->table;";
-    return (int) $this->DB->query($sql)->fetchColumn();
-  }
+        return $stmt->fetchAll(PDO::FETCH_CLASS, "App\\Entities\\{$this->class}");
+    }
 
-  /**
-   * Returns the auto-increment ID generated by the last INSERT.
-   * Call immediately after create() to get the new record's ID.
-   *
-   * @return int
-   */
-  public function getLastInsertId(): int
-  {
-    return (int) $this->DB->lastInsertId();
-  }
+    /**
+     * Streams all records using a Generator for memory-efficient iteration.
+     *
+     * Use this instead of getAll() when processing large result sets.
+     * Each row is yielded one at a time — memory usage stays constant.
+     *
+     * Usage:
+     *   foreach ($repo->getAllStream() as $entity) { ... }
+     *
+     * @return Generator<object>
+     */
+    public function getAllStream(): Generator
+    {
+        $sql  = "SELECT * FROM `{$this->table}`";
+        $stmt = $this->DB->prepare($sql);
+        $stmt->execute();
 
-  private function prepareData(array $data): array
-  {
-    foreach ($data as $key => $value) {
-        if ($value instanceof \DateTime) {
-            $data[$key] = $value->format('Y-m-d H:i:s');
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $entityClass = "App\\Entities\\{$this->class}";
+            yield new $entityClass($row);
         }
     }
-    return $data;
-  }
 
-  /**
-   * Validates that a column key contains only safe identifier characters.
-   * Throws if the key does not match ^[a-zA-Z_][a-zA-Z0-9_]*$ to prevent
-   * SQL injection through crafted array keys in create() / updateById().
-   *
-   * @throws \InvalidArgumentException
-   */
-  private function validateColumnKey(string $key): string
-  {
-    if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)) {
-        throw new \InvalidArgumentException("Invalid column name: '{$key}'");
+    /**
+     * Retrieves a record by its primary key.
+     *
+     * @param int $id The record ID.
+     * @return object|null The entity object, or null if not found.
+     */
+    public function getById(int $id): object|null
+    {
+        $pk   = strtolower($this->class) . '_id';
+        $sql  = "SELECT * FROM `{$this->table}` WHERE `{$pk}` = :id LIMIT 1";
+        $stmt = $this->DB->prepare($sql);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = $stmt->fetchObject("App\\Entities\\{$this->class}");
+        return $result ?: null;
     }
-    return $key;
-  }
+
+    /**
+     * Returns the total number of records in the table.
+     */
+    public function count(): int
+    {
+        $sql  = "SELECT COUNT(*) FROM `{$this->table}`";
+        $stmt = $this->DB->prepare($sql);
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
+    }
+
+    // -----------------------------------------------------------------------
+    // WRITE operations
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a new record.
+     *
+     * @param array<string, mixed> $data Column => value pairs.
+     * @return bool True on success.
+     */
+    public function create(array $data): bool
+    {
+        $data         = $this->prepareData($data);
+        $columns      = implode(', ', array_map(fn($k) => '`' . $this->validateColumnKey($k) . '`', array_keys($data)));
+        $placeholders = implode(', ', array_map(fn($k) => ":$k", array_keys($data)));
+
+        $sql  = "INSERT INTO `{$this->table}` ($columns) VALUES ($placeholders)";
+        $stmt = $this->DB->prepare($sql);
+
+        foreach ($data as $key => $value) {
+            $stmt->bindValue(":$key", $value);
+        }
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Updates a record by its primary key.
+     *
+     * @param int                  $id   The record ID.
+     * @param array<string, mixed> $data Column => value pairs to update.
+     * @return bool True on success.
+     */
+    public function updateById(int $id, array $data): bool
+    {
+        $data = $this->prepareData($data);
+        $pk   = strtolower($this->class) . '_id';
+
+        $setClause = implode(', ', array_map(
+            fn($k) => '`' . $this->validateColumnKey($k) . '` = :' . $k,
+            array_keys($data)
+        ));
+
+        $sql  = "UPDATE `{$this->table}` SET $setClause WHERE `{$pk}` = :id";
+        $stmt = $this->DB->prepare($sql);
+
+        foreach ($data as $key => $value) {
+            $stmt->bindValue(":$key", $value);
+        }
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Deletes a record by its primary key.
+     *
+     * @param int $id The record ID.
+     * @return bool True on success.
+     */
+    public function deleteById(int $id): bool
+    {
+        $pk   = strtolower($this->class) . '_id';
+        $sql  = "DELETE FROM `{$this->table}` WHERE `{$pk}` = :id";
+        $stmt = $this->DB->prepare($sql);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Returns the auto-increment ID generated by the last INSERT.
+     */
+    public function getLastInsertId(): int
+    {
+        return (int) $this->DB->lastInsertId();
+    }
+
+    // -----------------------------------------------------------------------
+    // IDOR Prevention — Ownership Verification
+    // -----------------------------------------------------------------------
+
+    /**
+     * Verifies that a record belongs to a specific user.
+     *
+     * Call this before any update/delete operation on user-owned resources
+     * to prevent Insecure Direct Object Reference (IDOR) attacks.
+     *
+     * @param int    $id          The record ID.
+     * @param int    $userId      The authenticated user's ID.
+     * @param string $ownerColumn The column containing the owner's user ID (default: 'user_id').
+     * @return bool True if the record belongs to the user.
+     */
+    public function isOwnedBy(int $id, int $userId, string $ownerColumn = 'user_id'): bool
+    {
+        $pk    = strtolower($this->class) . '_id';
+        $owner = $this->validateColumnKey($ownerColumn);
+
+        $sql  = "SELECT COUNT(*) FROM `{$this->table}` WHERE `{$pk}` = :id AND `{$owner}` = :user_id LIMIT 1";
+        $stmt = $this->DB->prepare($sql);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    // -----------------------------------------------------------------------
+    // Transaction Helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Begins a database transaction.
+     */
+    public function beginTransaction(): bool
+    {
+        return $this->DB->beginTransaction();
+    }
+
+    /**
+     * Commits the current transaction.
+     */
+    public function commit(): bool
+    {
+        return $this->DB->commit();
+    }
+
+    /**
+     * Rolls back the current transaction.
+     */
+    public function rollBack(): bool
+    {
+        return $this->DB->rollBack();
+    }
+
+    /**
+     * Wraps a callback in a transaction.
+     *
+     * Automatically commits on success or rolls back on exception.
+     *
+     * Usage:
+     *   $repo->transaction(function() use ($repo, $data) {
+     *       $repo->create($data);
+     *       $repo->updateById($id, ['status' => 'active']);
+     *   });
+     *
+     * @param callable $callback The operations to execute inside the transaction.
+     * @return mixed The return value of the callback.
+     * @throws \Throwable Re-throws any exception after rolling back.
+     */
+    public function transaction(callable $callback): mixed
+    {
+        $this->beginTransaction();
+
+        try {
+            $result = $callback();
+            $this->commit();
+            return $result;
+        } catch (\Throwable $e) {
+            $this->rollBack();
+            throw $e;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Internal Helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Prepares data values for SQL binding (e.g., DateTime → string).
+     */
+    private function prepareData(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if ($value instanceof \DateTime || $value instanceof \DateTimeImmutable) {
+                $data[$key] = $value->format('Y-m-d H:i:s');
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Validates that a column key contains only safe identifier characters.
+     *
+     * @throws \InvalidArgumentException If the key is not a valid SQL identifier.
+     */
+    private function validateColumnKey(string $key): string
+    {
+        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)) {
+            throw new \InvalidArgumentException("Invalid column name: '{$key}'");
+        }
+        return $key;
+    }
 }

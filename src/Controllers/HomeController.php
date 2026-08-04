@@ -1,9 +1,9 @@
 <?php
 
-namespace src\Controllers;
+namespace App\Controllers;
 
-use src\Abstracts\AbstractController;
-use src\Services\Route;
+use App\Abstracts\AbstractController;
+use App\Services\Route;
 
 class HomeController extends AbstractController
 {
@@ -16,7 +16,7 @@ class HomeController extends AbstractController
     #[Route('/403')]
     public function page403(): void
     {
-        header("HTTP/1.1 403 Forbidden");
+        http_response_code(403);
         header("Content-Type: text/html; charset=utf-8");
         $this->render('home/403');
     }
@@ -24,7 +24,7 @@ class HomeController extends AbstractController
     #[Route('/404')]
     public function page404(): void
     {
-        header("HTTP/1.1 404 Not Found");
+        http_response_code(404);
         header("Content-Type: text/html; charset=utf-8");
         $this->render('home/404');
     }
