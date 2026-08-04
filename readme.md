@@ -2,6 +2,8 @@
 
 A hyper-secure, high-performance native PHP MVC application template designed for enterprise-grade production deployments. Zero framework dependencies — only essential, audited libraries.
 
+> 📚 **Detailed Technical Documentation**: Full feature guides, API references, and architecture details are available in the [docs/](docs/README.md) folder.
+
 ## Table of Contents
 
 - [Architecture](#architecture)

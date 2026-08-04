@@ -3,6 +3,7 @@
 namespace App\Middleware;
 
 use App\Services\Config;
+use App\Services\ConfigRouter;
 
 /**
  * Security Headers Middleware
@@ -41,7 +42,7 @@ final class SecurityHeaders
 
         // --- Content Security Policy ---
         // Strict by default. Projects should adjust this per their external dependencies.
-        $csp = implode('; ', [
+        $cspDirectives = [
             "default-src 'self'",
             "script-src 'self'",
             "style-src 'self' 'unsafe-inline'",       // inline styles needed for email templates etc.
@@ -54,12 +55,20 @@ final class SecurityHeaders
             "base-uri 'self'",
             "form-action 'self'",
             "object-src 'none'",
-            "upgrade-insecure-requests",
-        ]);
-        header('Content-Security-Policy: ' . $csp);
+        ];
+
+        // Only upgrade insecure requests if the request is served over HTTPS
+        if (ConfigRouter::isHttps()) {
+            $cspDirectives[] = "upgrade-insecure-requests";
+        }
+
+        header('Content-Security-Policy: ' . implode('; ', $cspDirectives));
 
         // --- Cross-Origin policies ---
-        header('Cross-Origin-Opener-Policy: same-origin');
+        // COOP requires a trustworthy origin (HTTPS or localhost)
+        if (ConfigRouter::isHttps()) {
+            header('Cross-Origin-Opener-Policy: same-origin');
+        }
         header('Cross-Origin-Resource-Policy: same-origin');
     }
 }
