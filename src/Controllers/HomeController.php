@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Abstracts\AbstractController;
+use App\Services\Config;
 use App\Services\Route;
 
 class HomeController extends AbstractController

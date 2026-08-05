@@ -63,7 +63,7 @@ final class ImageProcessor
             default      => false,
         };
 
-        imagedestroy($source);
+        unset($source);
 
         return $result;
     }
@@ -109,7 +109,7 @@ final class ImageProcessor
 
         $thumb = imagecreatetruecolor($newW, $newH);
         if ($thumb === false) {
-            imagedestroy($source);
+            unset($source);
             return false;
         }
 
@@ -131,8 +131,7 @@ final class ImageProcessor
             default       => imagejpeg($thumb, $destPath, 85),
         };
 
-        imagedestroy($source);
-        imagedestroy($thumb);
+        unset($source, $thumb);
 
         return $result ? $destPath : false;
     }
@@ -150,7 +149,13 @@ final class ImageProcessor
     {
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
-        $dom->loadXML($svgContent, LIBXML_NONET | LIBXML_NOENT);
+
+        // SECURITY: LIBXML_NONET prevents network access during parsing.
+        // NEVER use LIBXML_NOENT — it enables entity expansion → XXE attacks.
+        if (!$dom->loadXML($svgContent, LIBXML_NONET)) {
+            libxml_clear_errors();
+            return '';
+        }
 
         // Remove <script> elements.
         $scripts = $dom->getElementsByTagName('script');
@@ -169,6 +174,10 @@ final class ImageProcessor
 
         if ($allElements !== false) {
             foreach ($allElements as $element) {
+                if (!$element instanceof \DOMElement) {
+                    continue;
+                }
+
                 // Remove event handlers.
                 foreach ($dangerousAttrs as $attr) {
                     if ($element->hasAttribute($attr)) {

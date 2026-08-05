@@ -1,6 +1,7 @@
 # Environment & secrets
 .env
-config.php
+/config.php
+
 
 # Dependencies
 /vendor/

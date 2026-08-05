@@ -44,11 +44,11 @@ final class SecurityHeaders
         // Strict by default. Projects should adjust this per their external dependencies.
         $cspDirectives = [
             "default-src 'self'",
-            "script-src 'self'",
+            "script-src 'self' https://challenges.cloudflare.com",
             "style-src 'self' 'unsafe-inline'",       // inline styles needed for email templates etc.
             "img-src 'self' data: https:",
             "font-src 'self' https://fonts.gstatic.com",
-            "connect-src 'self'",
+            "connect-src 'self' https://challenges.cloudflare.com",
             "frame-src 'self' https://challenges.cloudflare.com",  // Turnstile iframe
             "child-src 'self' https://challenges.cloudflare.com",
             "frame-ancestors 'self'",

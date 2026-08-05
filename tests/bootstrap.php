@@ -16,7 +16,7 @@ if (!file_exists($testEnvPath)) {
         'APP_DEBUG=true',
         'APP_URL=http://localhost',
         'APP_KEY=' . bin2hex(random_bytes(32)),
-        'APP_TIMEZONE=UTC',
+        'APP_TIMEZONE=Europe/Paris',
         'DB_HOST=127.0.0.1',
         'DB_PORT=3306',
         'DB_NAME=test_db',

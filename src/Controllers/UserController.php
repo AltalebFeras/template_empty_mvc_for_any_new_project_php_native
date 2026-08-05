@@ -27,9 +27,7 @@ class UserController extends AbstractController
     #[Route('/login', methods: ['GET'])]
     public function displayLoginForm(): void
     {
-        // Release session lock for non-mutating request.
-        session_write_close();
-        $this->render('home/home'); // Replace with your login view.
+        $this->render('user/login');
     }
 
     /**

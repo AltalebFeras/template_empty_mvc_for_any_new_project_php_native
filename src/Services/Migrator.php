@@ -50,14 +50,20 @@ final class Migrator
             }
 
             try {
-                $this->db->beginTransaction();
+                if (!$this->db->inTransaction()) {
+                    $this->db->beginTransaction();
+                }
                 $this->db->exec($migration['up']);
                 $this->recordMigration($name);
-                $this->db->commit();
+                if ($this->db->inTransaction()) {
+                    $this->db->commit();
+                }
                 $ran[] = $name;
                 echo "✓ Migrated: {$name}\n";
             } catch (\Throwable $e) {
-                $this->db->rollBack();
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
                 echo "✗ Failed: {$name} — {$e->getMessage()}\n";
                 break;
             }
@@ -98,14 +104,20 @@ final class Migrator
         }
 
         try {
-            $this->db->beginTransaction();
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+            }
             $this->db->exec($migration['down']);
             $this->removeMigration($last);
-            $this->db->commit();
+            if ($this->db->inTransaction()) {
+                $this->db->commit();
+            }
             echo "✓ Rolled back: {$last}\n";
             return $last;
         } catch (\Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             echo "✗ Rollback failed: {$last} — {$e->getMessage()}\n";
             return null;
         }
