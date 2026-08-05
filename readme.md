@@ -25,6 +25,7 @@ A hyper-secure, high-performance native PHP MVC application template designed fo
 - [Web Server Configuration](#web-server-configuration)
 - [Testing](#testing)
 - [Maintenance](#maintenance)
+- [Component Reference](#component-reference)
 - [Directory Structure](#directory-structure)
 
 ---
@@ -590,6 +591,51 @@ curl http://localhost:8080/health
 # Readiness probe
 curl http://localhost:8080/ready
 ```
+
+---
+
+## Component Reference
+
+For complete method signatures, internal logic, and advanced usage, see [docs/23-component-reference.md](docs/23-component-reference.md).
+
+### Key Components Overview
+
+| Category | File | Description & Usage Summary |
+|----------|------|-----------------------------|
+| **Controllers** | `FileController.php` | Serves uploaded files securely from `/storage/uploads` outside web root with MIME checking (`finfo`), path traversal protection (`realpath`), and inline/attachment dispositions. |
+| | `HealthController.php` | Operational probes (`GET /health` for database/Redis check, `GET /ready` for Kubernetes readiness probes). |
+| **Middleware** | `Cors.php` | Fine-grained Cross-Origin Resource Sharing handling allowed origins, headers, and preflight `OPTIONS` requests. |
+| | `RateLimiter.php` | Sliding window rate limiting using Redis sorted sets (with JSON file fallback) and automated threat logging. |
+| | `RequestLogger.php` | Measures execution duration (`ms`) and memory usage (`MB`) for HTTP requests; logs on shutdown. |
+| | `SecurityHeaders.php` | Sends defense-in-depth headers (`CSP`, `HSTS`, `X-Frame-Options`, `nosniff`, `Permissions-Policy`, `COOP/CORP`). |
+| | `ThreatLogger.php` | Fail2Ban and WAF compatible security logger (`logs/security-threats.log`) with automatic PII masking. |
+| **Migrations** | `2024_001_create_users_table.php` | Defines `users` database schema with Argon2id password comments and index structures. |
+| | `2024_002_create_roles_permissions_tables.php` | Creates RBAC schema (`roles`, `permissions`, `role_permissions`) and seeds default user roles. |
+| | `2024_003_create_jobs_table.php` | Schema for the background job queue table with status tracking and JSON payloads. |
+| **Services** | `ApiResponse.php` | Standardized REST JSON responses (`success`, `error`, `paginated`, `created`, `noContent`). |
+| | `Authorization.php` | Role-Based (RBAC) and Attribute-Based (ABAC) access control supporting wildcards and ownership verification (`owns`). |
+| | `Cache.php` | Multi-tier cache (L1 Memory array → L2 Redis → L3 File fallback) with `remember()` pattern. |
+| | `CircuitBreaker.php` | Resiliency pattern for external API calls (`CLOSED`, `OPEN`, `HALF_OPEN`) preventing cascading failures. |
+| | `Config.php` | Singleton `.env` configuration loader enforcing required environment keys and typed getters. |
+| | `ConfigRouter.php` | Request utilities (`_method` HTTP spoofing, session IP/UA origin check, `getClientIp`, `redirect`). |
+| | `Csrf.php` | Cryptographic CSRF token generation, per-form token scoping, and constant-time validation (`hash_equals`). |
+| | `Database.php` | Singleton PDO manager configured with strict error mode (`ERRMODE_EXCEPTION`) and health checking (`isHealthy`). |
+| | `Encryption.php` | Symmetric AEAD encryption using **AES-256-GCM** with random 12-byte IVs and authentication tags. |
+| | `FileUpload.php` | Secure upload handler with magic-byte MIME verification, extension whitelisting, UUID renaming, and memory bomb checks. |
+| | `Hydration.php` | Trait for auto-hydrating entity properties (`snake_case` DB columns → `setCamelCase` setters) and serialization. |
+| | `ImageProcessor.php` | Privacy EXIF metadata stripper, aspect-ratio preserving thumbnail generator, and SVG XSS sanitizer. |
+| | `JobQueue.php` | SQL task queue supporting `FOR UPDATE SKIP LOCKED`, atomic locks, and exponential backoff retries. |
+| | `Logger.php` | Monolog structured JSON logging wrapper with `app`, `security`, and `db` channels. |
+| | `Mail.php` | PHPMailer SMTP email dispatch service supporting HTML templates and attachments. |
+| | `Migrator.php` | Migration runner handling `up()`, `down()`, and `status()` tracked via database table `_migrations`. |
+| | `PasswordHasher.php` | Hashing service using **Argon2id** (64MB memory cost, 4 time cost) with automatic rehash verification. |
+| | `ResponseCompressor.php` | Output buffer wrapper generating `ETag` headers for 304 responses and transparent gzip compression. |
+| | `Route.php` | PHP 8 attribute (`#[Route('/path', methods: [...])]`) for declarative endpoint configuration. |
+| | `router.php` | Reflection route scanner and middleware pipeline dispatcher (CSRF → Auth → RBAC → ABAC → Controller). |
+| | `Turnstile.php` | Cloudflare Turnstile CAPTCHA server-side token verification client. |
+| | `Validator.php` | Input validation engine with 18+ rules (`required`, `email`, `confirmed`, `slug`, etc.) and HTML string escaping. |
+| **CLI Scripts** | `bin/migrate.php` | CLI entry point for running database migrations (`php bin/migrate.php up|down|status`). |
+| | `bin/worker.php` | CLI entry point for background job queue worker execution (`php bin/worker.php [--max=N]`). |
 
 ---
 
