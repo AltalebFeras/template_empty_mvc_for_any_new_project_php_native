@@ -27,6 +27,32 @@ use App\Controllers\HomeController;
 Config::boot();
 
 // -----------------------------------------------------------------------
+// Helper Functions (Asset cache-busting)
+// -----------------------------------------------------------------------
+if (!function_exists('asset_url')) {
+    /**
+     * Returns a cache-busted asset URL (?v=<md5>).
+     * Uses a root-relative path to ensure it always matches CSP 'self'.
+     */
+    function asset_url(string $path): string
+    {
+        $cleanPath  = '/' . ltrim($path, '/');
+        $publicPath = dirname(__DIR__) . '/public' . $cleanPath;
+        if (file_exists($publicPath)) {
+            $hash    = md5_file($publicPath);
+            $version = $hash ? substr($hash, 0, 10) : (string)@filemtime($publicPath);
+        } else {
+            $version = (string)time();
+        }
+
+        $basePath = (string) parse_url(Config::baseUrl(), PHP_URL_PATH);
+        $basePath = rtrim($basePath, '/');
+
+        return $basePath . $cleanPath . '?v=' . $version;
+    }
+}
+
+// -----------------------------------------------------------------------
 // 2. Error Reporting (environment-aware)
 // -----------------------------------------------------------------------
 if (Config::isProduction()) {
@@ -93,11 +119,14 @@ if (session_status() === PHP_SESSION_NONE) {
     $idleTimeout = Config::getInt('SESSION_IDLE_TIMEOUT', 1800);
     if (isset($_SESSION['_last_activity'])) {
         if (time() - $_SESSION['_last_activity'] > $idleTimeout) {
-            // Session has been idle too long — destroy it.
+            // Check if user was logged in before destroying session
+            $wasConnected = !empty($_SESSION['connected']);
             session_unset();
             session_destroy();
             session_start();
-            $_SESSION['error'] = 'Your session expired due to inactivity. Please log in again.';
+            if ($wasConnected) {
+                $_SESSION['error'] = 'Your session expired due to inactivity. Please log in again.';
+            }
         }
     }
     $_SESSION['_last_activity'] = time();

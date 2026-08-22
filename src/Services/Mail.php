@@ -42,14 +42,14 @@ final class Mail
         $this->mail->Password = Config::get('MAIL_PASSWORD', '');
         $this->mail->CharSet  = 'UTF-8';
 
-        // Production: port 465 → implicit TLS (SMTPS).
-        // Development: no encryption so a local relay (Mailpit, Mailtrap…) works.
-        $encryption = Config::get('MAIL_ENCRYPTION', 'tls');
-        if (Config::isProduction()) {
-            $this->mail->SMTPSecure = match ($encryption) {
-                'ssl'   => PHPMailer::ENCRYPTION_SMTPS,
-                default => PHPMailer::ENCRYPTION_STARTTLS,
-            };
+        // Encryption: port 465 = SMTPS/SSL, port 587 = STARTTLS
+        $encryption = strtolower((string) Config::get('MAIL_ENCRYPTION', 'tls'));
+        if ($encryption === 'ssl' || $encryption === 'smtps' || $this->mail->Port === 465) {
+            $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $this->mail->SMTPAutoTLS = true;
+        } elseif ($encryption === 'tls' || $encryption === 'starttls' || $this->mail->Port === 587) {
+            $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $this->mail->SMTPAutoTLS = true;
         } else {
             $this->mail->SMTPSecure = '';
             $this->mail->SMTPAutoTLS = false;
@@ -231,7 +231,7 @@ final class Mail
     ): void {
         try {
             $siteUrl  = Config::baseUrl() . '/';
-            $logoPath = $siteUrl . 'assets/imgs/logo.webp';
+            $logoPath = $siteUrl . 'assets/imgs/logo.svg';
 
             $this->mail->setFrom($from, $fromName);
             $this->mail->addAddress($to, $toName);

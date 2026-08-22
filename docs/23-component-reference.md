@@ -666,22 +666,29 @@ JobQueue::dispatch('send_reminder', ['user_id' => 123], delay: 300);
 
 ---
 
-### Logger
+#### Logger
 File: [`src/Services/Logger.php`](file:///e:/personal_project/template_empty_mvc_for_any_new_project_php_native/src/Services/Logger.php)
 
 #### How It Works
-Monolog logging wrapper exposing configured logging channels:
-- Channels: `app` (`logs/app.log`), `security` (`logs/security.log`), `db` (`logs/db.log`).
-- Formats log entries as structured JSON lines.
-- Adjusts log levels dynamically based on `APP_DEBUG` (DEBUG in dev, INFO/WARNING in production).
+PSR-3 compatible structured logger with Monolog 3 support:
+- Manages pre-configured channels (`app`, `security`, `database`, `mail`).
+- Automatically masks sensitive PII in log context (passwords, tokens, emails, credit cards, SSN).
+- Enriches log records with request context (request ID, client IP, authenticated user ID).
+- Writes daily-rotated JSON log files in `logs/` directory.
+- Provides shorthand static methods: `Logger::info()` and `Logger::error()` for the default `app` channel.
 
 #### How to Use It
 ```php
 use App\Services\Logger;
 
-Logger::channel('app')->info('User profile updated', ['user_id' => 42]);
-Logger::channel('security')->warning('Failed login attempt', ['ip' => $clientIp]);
-Logger::channel('db')->error('Query failure', ['sql' => $sqlQuery]);
+// Shorthand methods (default 'app' channel)
+Logger::info('User profile updated', ['user_id' => 42]);
+Logger::error('Payment gateway timeout', ['order_id' => 1001]);
+
+// Channel-specific logging
+Logger::channel('security')->warning('Failed login attempt', ['email' => 'user@example.com']);
+Logger::channel('database')->critical('DB connection failed', ['host' => '127.0.0.1']);
+Logger::channel('mail')->error('SMTP delivery failed', ['to' => 'user@example.com']);
 ```
 
 ---
@@ -691,8 +698,10 @@ File: [`src/Services/Mail.php`](file:///e:/personal_project/template_empty_mvc_f
 
 #### How It Works
 SMTP mail dispatch engine wrapping PHPMailer:
-- Configures SMTP host, port, authentication, and TLS/STARTTLS encryption from `.env`.
-- Supports HTML email rendering, plain-text alternative fallbacks, and file attachments.
+- Table-based nested HTML email template compatible with Microsoft Outlook Word rendering engine and all major mobile email clients.
+- Plain-text fallback alternative body automatically generated via `strip_tags()`.
+- Supports file attachments via `$mailer->addAttachment()`.
+- Auto-detects encryption mode: port 465 for SMTPS/SSL, port 587 for STARTTLS.
 
 #### How to Use It
 ```php
@@ -700,13 +709,18 @@ use App\Services\Mail;
 
 $mailer = new Mail();
 
-$success = $mailer->sendEmail(
-    fromEmail: 'noreply@example.com',
-    fromName:  'My Application',
-    toEmail:   'recipient@example.com',
-    toName:    'John Doe',
-    subject:   'Welcome to our platform',
-    htmlBody:  '<h1>Welcome!</h1><p>Your account is ready.</p>'
+// Optional: add attachments before sending
+$mailer->addAttachment('/path/to/invoice.pdf');
+
+// Send email (returns void, throws RuntimeException on failure)
+$mailer->sendEmail(
+    from:     'noreply@example.com',
+    fromName: 'My Application',
+    to:       'recipient@example.com',
+    toName:   'John Doe',
+    subject:  'Welcome to our platform',
+    body:     'Your account is ready.',
+    headers:  ['X-Priority' => '1']  // optional custom headers
 );
 ```
 
@@ -717,9 +731,9 @@ File: [`src/Services/Migrator.php`](file:///e:/personal_project/template_empty_m
 
 #### How It Works
 Database migration execution engine:
-- Scans `src/Migrations/*.php` files in alphabetical/timestamp order.
-- Tracks completed migrations in database table `_migrations`.
-- Executes migration SQL queries inside transactional blocks (`beginTransaction` / `commit` / `rollBack`).
+- Discovers and applies forward schema migrations in `src/Migrations/`.
+- Maintains applied migration state in the database table `_migrations`.
+- Supports rollback (`down`) and status inspection (`status`).
 
 #### How to Use It
 ```php
@@ -730,7 +744,7 @@ $migrator = new Migrator();
 // Apply pending migrations
 $migrator->up();
 
-// Rollback last applied migration batch
+// Rollback the last single applied migration
 $migrator->down();
 
 // Output status table of migrations
@@ -744,24 +758,26 @@ File: [`src/Services/PasswordHasher.php`](file:///e:/personal_project/template_e
 
 #### How It Works
 Handles password security using **Argon2id**:
-- Uses memory cost of 64MB (`65536` KB), time cost of `4` iterations, and parallelism factor of `2` threads.
-- `verify()` checks plaintext passwords against stored hashes.
-- `needsRehash()` detects if algorithmic costs need upgrading.
+- Uses memory cost: 64MB (65536 KiB), time cost: 4 iterations, threads: 2.
+- Constant-time password verification via `PasswordHasher::verify()`.
+- Transparent password rehash checking via `PasswordHasher::needsRehash()`.
 
 #### How to Use It
 ```php
 use App\Services\PasswordHasher;
 
-// Hash new user password
-$hash = PasswordHasher::hash('user-secret-password');
+// Hash plaintext password
+$hash = PasswordHasher::hash($plainPassword);
 
-// Verify credentials during login
+// Verify password
 if (PasswordHasher::verify($inputPassword, $storedHash)) {
-    // Rehash if security parameters updated
-    if (PasswordHasher::needsRehash($storedHash)) {
-        $newHash = PasswordHasher::hash($inputPassword);
-        $userRepository->updatePassword($userId, $newHash);
-    }
+    // Correct password
+}
+
+// Transparent upgrade check on login
+if (PasswordHasher::needsRehash($storedHash)) {
+    $newHash = PasswordHasher::hash($inputPassword);
+    $userRepo->updatePassword($userId, $newHash);
 }
 ```
 
@@ -772,15 +788,17 @@ File: [`src/Services/ResponseCompressor.php`](file:///e:/personal_project/templa
 
 #### How It Works
 HTTP response optimization service:
-- Generates an `ETag` checksum from output content. If the client sends a matching `If-None-Match` header, emits `304 Not Modified` and terminates output.
-- Activates transparent gzip response compression if supported by the browser client (`Accept-Encoding: gzip`).
+- Buffers output using `ob_start()`.
+- Gzip/Deflate compression applied automatically if the client supports it (`Accept-Encoding`).
+- Emits standard cache control and expiration headers.
 
 #### How to Use It
-Call `ResponseCompressor::start()` early during HTTP initialization:
 ```php
 use App\Services\ResponseCompressor;
 
 ResponseCompressor::start();
+// ... render page content ...
+ResponseCompressor::finish(maxAge: 3600, isPublic: true);
 ```
 
 ---
@@ -800,11 +818,8 @@ class PostController
     #[Route('/posts', methods: ['GET'])]
     public function index(): void {}
 
-    #[Route('/posts/create', methods: ['POST'], authRequired: true, permissions: ['posts.write'])]
+    #[Route('/posts/create', methods: ['POST'], authRequired: true, roles: ['admin', 'editor'])]
     public function store(): void {}
-
-    #[Route('/admin/settings', methods: ['GET', 'POST'], authRequired: true, roles: ['admin'])]
-    public function settings(): void {}
 }
 ```
 
@@ -815,14 +830,14 @@ File: [`src/Services/router.php`](file:///e:/personal_project/template_empty_mvc
 
 #### How It Works
 Reflection-based attribute router:
-1. Normalizes target request URI and HTTP method (handling `_method` spoofing).
+1. Normalizes target request URI and HTTP method (handling `_method` spoofing and `parse_url()` path stripping).
 2. Performs automated state-changing CSRF token validation on `POST`, `PUT`, `PATCH`, and `DELETE` methods.
 3. Dynamically scans controller classes in `src/Controllers/` using PHP Reflection.
-4. Executes the middleware pipeline in sequential order: Authentication Guard → RBAC Role Check → ABAC Permission Check → Rate Limiter → Controller Action.
+4. Executes the middleware pipeline in sequential order: CSRF Validation → Authentication Guard → RBAC Role Check → ABAC Permission Check → Controller Action.
 5. Emits HTTP 404 page if no matching route is found.
 
 #### How to Use It
-Included automatically in `public/index.php`:
+Dispatched automatically in `src/init.php`:
 ```php
 require_once __DIR__ . '/../src/Services/router.php';
 ```
@@ -835,7 +850,9 @@ File: [`src/Services/Turnstile.php`](file:///e:/personal_project/template_empty_
 #### How It Works
 Cloudflare Turnstile bot prevention service:
 - Sends POST request to `https://challenges.cloudflare.com/turnstile/v0/siteverify` containing secret key and client token (`cf-turnstile-response`).
-- Evaluates Cloudflare API response JSON (`success: true|false`).
+- Validates `success`, `hostname` (must match `APP_URL`), and `challenge_ts` (max 5 minutes age).
+- Returns a `TurnstileResult` object with `$result->success` (bool) and `$result->errorCodes` (array).
+- In development mode (non-production), skips verification if no `TURNSTILE_SECRET_KEY` is configured or if test keys are used.
 
 #### How to Use It
 ```php
@@ -843,9 +860,10 @@ use App\Services\Turnstile;
 
 $token = $_POST['cf-turnstile-response'] ?? '';
 
-$result = Turnstile::verify($token);
+$result = Turnstile::verify($token, $_SERVER['REMOTE_ADDR'] ?? null);
 
 if ($result->failed()) {
+    // $result->errorCodes contains details like ['hostname-mismatch'], ['token-expired'], etc.
     http_response_code(400);
     exit('CAPTCHA validation failed. Please try again.');
 }
@@ -857,32 +875,26 @@ if ($result->failed()) {
 File: [`src/Services/Validator.php`](file:///e:/personal_project/template_empty_mvc_for_any_new_project_php_native/src/Services/Validator.php)
 
 #### How It Works
-Input validation engine supporting over 18 rules (`required`, `email`, `min`, `max`, `in`, `numeric`, `integer`, `alpha`, `alphanumeric`, `confirmed`, `url`, `ip`, `json`, `regex`, `slug`, `date`). Supports custom message overrides and includes HTML escaping (`Validator::escape()`).
+Input validation engine supporting 15 rules: `required`, `email`, `min:N`, `max:N`, `int`, `positiveInt`, `url`, `date`, `boolean`, `alpha`, `alpha_num`, `slug`, `in:a,b,c`, `regex:pattern`, `confirmed`. Supports custom error message overrides and includes HTML output escaping (`Validator::escape()`). Unknown rules are silently ignored.
 
 #### How to Use It
 ```php
 use App\Services\Validator;
 
-$data = [
-    'email'    => 'user@example.com',
-    'password' => 'secret123',
-    'age'      => '25',
-];
-
-$errors = Validator::validate($data, [
-    'email'    => ['required', 'email', 'max:255'],
-    'password' => ['required', 'min:8'],
-    'age'      => ['required', 'integer', 'min:18'],
+$errors = Validator::validate($_POST, [
+    'email'    => ['required', 'email'],
+    'username' => ['required', 'min:3', 'max:20', 'alpha_num'],
+    'age'      => ['int', 'min:18'],
+    'status'   => ['in:active,inactive,pending'],
 ], [
-    'email.required' => 'Email address is mandatory.',
+    'email.required' => 'Please provide an email address.',
 ]);
 
 if (!empty($errors)) {
-    // Return validation errors
-    ApiResponse::error($errors, 422);
+    // handle errors
 }
 
-// Escape user input for safe HTML output
+// XSS Escaping helper
 $safeHtml = Validator::escape($_POST['comment']);
 ```
 
@@ -890,23 +902,32 @@ $safeHtml = Validator::escape($_POST['comment']);
 
 ## CLI Scripts
 
+### bin/create_admin.php
+File: [`bin/create_admin.php`](file:///e:/personal_project/template_empty_mvc_for_any_new_project_php_native/bin/create_admin.php)
+
+#### How It Works
+CLI bootstrap utility to create or update the primary administrator user with Argon2id password hash.
+
+#### How to Use It
+```bash
+php bin/create_admin.php admin@example.com MySecretPassword123!
+```
+
+---
+
 ### bin/migrate.php
 File: [`bin/migrate.php`](file:///e:/personal_project/template_empty_mvc_for_any_new_project_php_native/bin/migrate.php)
 
 #### How It Works
 CLI executable script for managing database migrations:
-- Boots environment configuration (`Config::boot()`).
-- Instantiates `Migrator` service and executes command arguments (`up`, `down`, `status`).
+- `up`: applies all outstanding migrations.
+- `down`: rolls back the most recent migration batch.
+- `status`: displays migration status table.
 
 #### How to Use It
 ```bash
-# Execute all pending database migrations
 php bin/migrate.php up
-
-# Rollback the last applied migration
 php bin/migrate.php down
-
-# Print migration status table
 php bin/migrate.php status
 ```
 
@@ -917,12 +938,12 @@ File: [`bin/worker.php`](file:///e:/personal_project/template_empty_mvc_for_any_
 
 #### How It Works
 CLI background job worker runner:
-- Boots configuration environment.
-- Passes `--max=N` argument flag to `JobQueue::work()` loop to limit total processed jobs before exiting.
+- Polls the `jobs` database table for `pending` jobs with `run_at <= NOW()`.
+- Dispatches jobs to handlers and records status (`completed` or `failed`).
+- Supports automatic retry handling for transient errors.
 
 #### How to Use It
 ```bash
-# Run worker loop indefinitely
 php bin/worker.php
 
 # Run worker processing up to 100 jobs then exit

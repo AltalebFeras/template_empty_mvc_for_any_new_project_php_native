@@ -112,7 +112,7 @@ final class Authorization
         }
 
         // Category wildcard: 'users.*' matches 'users.read', 'users.delete', etc.
-        $category = explode('.', $permission)[0] ?? '';
+        $category = explode('.', $permission)[0];
         if (in_array($category . '.*', $permissions, true)) {
             return true;
         }

@@ -31,6 +31,11 @@ final class SecurityHeaders
         // Disable unused browser features.
         header('Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()');
 
+        // Prevent browser from caching dynamic HTML / response pages
+        header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
         // Remove PHP version fingerprint.
         header_remove('X-Powered-By');
 
@@ -44,13 +49,13 @@ final class SecurityHeaders
         // Strict by default. Projects should adjust this per their external dependencies.
         $cspDirectives = [
             "default-src 'self'",
-            "script-src 'self' https://challenges.cloudflare.com",
-            "style-src 'self' 'unsafe-inline'",       // inline styles needed for email templates etc.
-            "img-src 'self' data: https:",
-            "font-src 'self' https://fonts.gstatic.com",
-            "connect-src 'self' https://challenges.cloudflare.com",
-            "frame-src 'self' https://challenges.cloudflare.com",  // Turnstile iframe
-            "child-src 'self' https://challenges.cloudflare.com",
+            "script-src 'self' 'unsafe-inline' https: http: https://challenges.cloudflare.com",
+            "style-src 'self' 'unsafe-inline' https: http: https://fonts.googleapis.com https://cdn.jsdelivr.net",
+            "img-src 'self' data: https: http: blob:",
+            "font-src 'self' https: http: https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
+            "connect-src 'self' https: http: https://challenges.cloudflare.com",
+            "frame-src 'self' https: http: https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://*.google.com https://www.openstreetmap.org",
+            "child-src 'self' https: http: https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://*.google.com https://www.openstreetmap.org",
             "frame-ancestors 'self'",
             "base-uri 'self'",
             "form-action 'self'",

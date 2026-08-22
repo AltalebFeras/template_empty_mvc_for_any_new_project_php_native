@@ -63,9 +63,10 @@ final class Turnstile
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => http_build_query($postData),
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_TIMEOUT        => 4,
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+            CURLOPT_SSL_VERIFYPEER => Config::isProduction(),
             CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
         ]);
 
@@ -93,9 +94,10 @@ final class Turnstile
         $errorCodes = $data['error-codes'] ?? [];
         $hostname   = $data['hostname'] ?? null;
         $timestamp  = $data['challenge_ts'] ?? null;
+        $isTestKey  = $data['metadata']['result_with_testing_key'] ?? false;
 
-        // Validate hostname matches our domain.
-        if ($success && $hostname !== null) {
+        // Validate hostname matches our domain (only in production with real keys).
+        if ($success && $hostname !== null && Config::isProduction() && !$isTestKey) {
             $expectedHost = parse_url(Config::baseUrl(), PHP_URL_HOST);
             if ($expectedHost && $hostname !== $expectedHost) {
                 $success    = false;
@@ -104,7 +106,7 @@ final class Turnstile
         }
 
         // Validate token freshness.
-        if ($success && $timestamp !== null) {
+        if ($success && $timestamp !== null && !$isTestKey) {
             $challengeTime = strtotime($timestamp);
             if ($challengeTime !== false && (time() - $challengeTime) > self::MAX_TOKEN_AGE_SECONDS) {
                 $success    = false;
@@ -121,6 +123,9 @@ final class Turnstile
  */
 final class TurnstileResult
 {
+    /**
+     * @param array<int|string, mixed> $errorCodes
+     */
     public function __construct(
         public readonly bool  $success,
         public readonly array $errorCodes = [],

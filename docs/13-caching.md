@@ -108,6 +108,47 @@ ResponseCompressor::finish(maxAge: 3600, isPublic: true);
 
 ---
 
+## Automated Static Asset Cache Busting (`asset_url()`)
+
+To prevent browsers and CDN edge caches from serving stale CSS, JavaScript, logos, and images after deployments, all static resources are loaded using the `asset_url()` helper.
+
+### How It Works
+
+Located in `src/init.php`:
+```php
+function asset_url(string $path): string
+{
+    $baseUrl = Config::baseUrl();
+    $cleanPath = '/' . ltrim($path, '/');
+    $publicPath = dirname(__DIR__) . '/public' . $cleanPath;
+    if (file_exists($publicPath)) {
+        $hash = md5_file($publicPath);
+        $version = $hash ? substr($hash, 0, 10) : (string)@filemtime($publicPath);
+    } else {
+        $version = (string)time();
+    }
+    return $baseUrl . $cleanPath . '?v=' . $version;
+}
+```
+
+1. Resolves the real physical path of the asset in `public/`.
+2. Computes the MD5 file content hash.
+3. Appends `?v=<hash>` to the asset URL.
+4. When any asset is updated, the hash changes automatically, bypassing stale client and CDN caches.
+
+### Usage in Views
+
+```php
+<!-- Images and Logos -->
+<img src="<?= asset_url('assets/imgs/logo.svg') ?>" alt="Logo">
+
+<!-- Stylesheets and Scripts -->
+<link rel="stylesheet" href="<?= asset_url('assets/css/global.css') ?>">
+<script src="<?= asset_url('assets/js/main.js') ?>" defer></script>
+```
+
+---
+
 ## OPcache Configuration
 
 Production-tuned bytecode caching configuration in `opcache.ini`:

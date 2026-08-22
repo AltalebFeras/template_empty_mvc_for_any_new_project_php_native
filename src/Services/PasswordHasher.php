@@ -40,13 +40,7 @@ final class PasswordHasher
      */
     public static function hash(string $password): string
     {
-        $hash = password_hash($password, PASSWORD_ARGON2ID, self::OPTIONS);
-
-        if ($hash === false || $hash === null) {
-            throw new RuntimeException('Password hashing failed. Check Argon2id support.');
-        }
-
-        return $hash;
+        return password_hash($password, PASSWORD_ARGON2ID, self::OPTIONS);
     }
 
     /**

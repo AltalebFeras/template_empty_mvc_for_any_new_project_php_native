@@ -47,11 +47,14 @@ class ConfigRouter
             $_SESSION['ip_address'] !== ($_SERVER['REMOTE_ADDR'] ?? '') ||
             $_SESSION['user_agent'] !== ($_SERVER['HTTP_USER_AGENT'] ?? '')
         ) {
+            $wasConnected = !empty($_SESSION['connected']);
             session_destroy();
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
-            $_SESSION['error'] = 'Your session has expired. Please log in again.';
+            if ($wasConnected) {
+                $_SESSION['error'] = 'Your session has expired. Please log in again.';
+            }
             return false;
         }
 

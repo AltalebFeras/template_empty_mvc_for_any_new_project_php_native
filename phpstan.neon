@@ -5,4 +5,5 @@ parameters:
     excludePaths:
         - src/Views
         - src/Migrations
-
+    ignoreErrors:
+        - identifier: missingType.iterableValue

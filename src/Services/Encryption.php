@@ -135,11 +135,6 @@ final class Encryption
     {
         $masterKey = Config::getEncryptionKey();
 
-        $derived = hash_hkdf('sha256', $masterKey, 32, 'aes-256-gcm-encryption');
-        if ($derived === false) {
-            throw new RuntimeException('Key derivation (HKDF) failed.');
-        }
-
-        return $derived;
+        return hash_hkdf('sha256', $masterKey, 32, 'aes-256-gcm-encryption');
     }
 }

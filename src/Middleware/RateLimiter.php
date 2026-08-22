@@ -144,7 +144,7 @@ final class RateLimiter
     private static function recordAttemptRedis(object $redis, string $key, int $window): void
     {
         $now = microtime(true);
-        $redis->zadd($key, [$now => (string) $now]);
+        $redis->zadd($key, [(string) $now => (string) $now]);
         $redis->expire($key, $window + 1);
     }
 

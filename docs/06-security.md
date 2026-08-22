@@ -194,18 +194,18 @@ The `SecurityHeaders` middleware sends defense-in-depth HTTP response headers on
 
 ```
 default-src 'self';
-script-src 'self';
-style-src 'self' 'unsafe-inline';
-img-src 'self' data: https:;
-font-src 'self' https://fonts.gstatic.com;
-connect-src 'self';
-frame-src 'self' https://challenges.cloudflare.com;
-child-src 'self' https://challenges.cloudflare.com;
+script-src 'self' 'unsafe-inline' https: http: https://challenges.cloudflare.com;
+style-src 'self' 'unsafe-inline' https: http: https://fonts.googleapis.com https://cdn.jsdelivr.net;
+img-src 'self' data: https: http: blob:;
+font-src 'self' https: http: https://fonts.gstatic.com https://cdn.jsdelivr.net data:;
+connect-src 'self' https: http: https://challenges.cloudflare.com;
+frame-src 'self' https: http: https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://*.google.com https://www.openstreetmap.org;
+child-src 'self' https: http: https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://*.google.com https://www.openstreetmap.org;
 frame-ancestors 'self';
 base-uri 'self';
 form-action 'self';
 object-src 'none';
-upgrade-insecure-requests;
+upgrade-insecure-requests; (conditionally added on HTTPS connections)
 ```
 
 ### Customizing CSP

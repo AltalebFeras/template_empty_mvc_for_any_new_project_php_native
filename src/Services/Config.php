@@ -61,6 +61,9 @@ final class Config
     {
         if (self::$instance === null) {
             self::$instance = new self();
+            if (!defined('APP_URL')) {
+                define('APP_URL', self::baseUrl());
+            }
         }
     }
 

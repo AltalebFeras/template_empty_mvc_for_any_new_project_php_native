@@ -138,7 +138,7 @@ class User
     /**
      * Set the value of createdAt
      */
-    public function setCreatedAt($createdAt): self
+    public function setCreatedAt(mixed $createdAt): self
     {
         $this->createdAt = $createdAt;
 

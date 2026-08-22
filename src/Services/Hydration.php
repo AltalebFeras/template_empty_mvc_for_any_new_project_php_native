@@ -33,7 +33,7 @@ trait Hydration
             }
         }
     }
-    public function __set($name, $value)
+    public function __set(string $name, mixed $value): void
     {
         $this->hydrate([$name => $value]);
     }

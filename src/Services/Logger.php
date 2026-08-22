@@ -53,23 +53,22 @@ final class Logger
         $logger->pushProcessor(new PsrLogMessageProcessor());
 
         // PII masking processor.
-        $logger->pushProcessor(function (array $record) {
-            if (isset($record['context'])) {
-                $record['context'] = self::maskPiiInContext($record['context']);
-            }
-            return $record;
+        $logger->pushProcessor(function (\Monolog\LogRecord $record): \Monolog\LogRecord {
+            $context = self::maskPiiInContext($record->context);
+            return $record->with(context: $context);
         });
 
         // Request context enrichment.
-        $logger->pushProcessor(function (array $record) {
-            $record['extra']['request_id'] = $_SERVER['HTTP_X_REQUEST_ID'] ?? substr(bin2hex(random_bytes(8)), 0, 16);
-            $record['extra']['ip']         = $_SERVER['REMOTE_ADDR'] ?? 'cli';
+        $logger->pushProcessor(function (\Monolog\LogRecord $record): \Monolog\LogRecord {
+            $extra = $record->extra;
+            $extra['request_id'] = $_SERVER['HTTP_X_REQUEST_ID'] ?? substr(bin2hex(random_bytes(8)), 0, 16);
+            $extra['ip']         = $_SERVER['REMOTE_ADDR'] ?? 'cli';
 
             if (isset($_SESSION['user_id'])) {
-                $record['extra']['user_id'] = $_SESSION['user_id'];
+                $extra['user_id'] = $_SESSION['user_id'];
             }
 
-            return $record;
+            return $record->with(extra: $extra);
         });
 
         $logger->pushHandler($handler);
@@ -81,6 +80,8 @@ final class Logger
 
     /**
      * Shorthand: logs an info message to the default 'app' channel.
+     *
+     * @param array<string, mixed> $context
      */
     public static function info(string $message, array $context = []): void
     {
@@ -89,6 +90,8 @@ final class Logger
 
     /**
      * Shorthand: logs an error to the default 'app' channel.
+     *
+     * @param array<string, mixed> $context
      */
     public static function error(string $message, array $context = []): void
     {
@@ -97,6 +100,9 @@ final class Logger
 
     /**
      * Masks PII in log context values.
+     *
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
      */
     private static function maskPiiInContext(array $context): array
     {
@@ -130,19 +136,32 @@ final class Logger
     }
 
     /**
-     * Parses a log level string to Monolog level constant.
+     * Parses a log level string to Monolog level constant or enum.
      */
-    private static function parseLevel(string $level): int
+    private static function parseLevel(string $level): \Monolog\Level|int
     {
+        if (class_exists(\Monolog\Level::class)) {
+            return match (strtolower($level)) {
+                'emergency' => \Monolog\Level::Emergency,
+                'alert'     => \Monolog\Level::Alert,
+                'critical'  => \Monolog\Level::Critical,
+                'error'     => \Monolog\Level::Error,
+                'warning'   => \Monolog\Level::Warning,
+                'notice'    => \Monolog\Level::Notice,
+                'info'      => \Monolog\Level::Info,
+                default     => \Monolog\Level::Debug,
+            };
+        }
+
         return match (strtolower($level)) {
-            'emergency' => MonologLogger::EMERGENCY,
-            'alert'     => MonologLogger::ALERT,
-            'critical'  => MonologLogger::CRITICAL,
-            'error'     => MonologLogger::ERROR,
-            'warning'   => MonologLogger::WARNING,
-            'notice'    => MonologLogger::NOTICE,
-            'info'      => MonologLogger::INFO,
-            default     => MonologLogger::DEBUG,
+            'emergency' => 600,
+            'alert'     => 550,
+            'critical'  => 500,
+            'error'     => 400,
+            'warning'   => 300,
+            'notice'    => 250,
+            'info'      => 200,
+            default     => 100,
         };
     }
 }

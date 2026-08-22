@@ -21,9 +21,12 @@ use App\Services\ConfigRouter;
 use App\Services\Csrf;
 use App\Services\Route;
 
-// Normalize the path: remove leading/trailing slashes, then re-add the leading one.
-$route  = '/' . trim($_SERVER['REDIRECT_URL'] ?? '/', '/');
-$method = ConfigRouter::getMethod();
+// Normalize the path: parse URI path, strip index.php if rewritten, trim slashes.
+$requestUri = $_SERVER['REQUEST_URI'] ?? $_SERVER['REDIRECT_URL'] ?? '/';
+$path       = (string) parse_url($requestUri, PHP_URL_PATH);
+$path       = (string) preg_replace('#^/index\.php#i', '', $path);
+$route      = '/' . trim($path, '/');
+$method     = ConfigRouter::getMethod();
 
 // -----------------------------------------------------------------------
 // CSRF validation for all state-changing requests.
@@ -69,8 +72,11 @@ foreach (glob($controllerDir . '/*.php') as $file) {
             /** @var Route $routeAttr */
             $routeAttr = $attribute->newInstance();
 
-            // Match path and HTTP method.
-            if ($routeAttr->path !== $route || !in_array($method, $routeAttr->methods, true)) {
+            // Match path and HTTP method (HEAD requests match GET routes).
+            $methodMatches = in_array($method, $routeAttr->methods, true)
+                || ($method === 'HEAD' && in_array('GET', $routeAttr->methods, true));
+
+            if ($routeAttr->path !== $route || !$methodMatches) {
                 continue;
             }
 

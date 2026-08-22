@@ -37,7 +37,7 @@ abstract class AbstractController
      * @param string $route The route exists and defined in the router to redirect to.
      * @param array $query An associative array of query parameters to append to the URL, empty by default.
      * @param mixed $errors Optional errors to store in the session; triggers error=true query param when not empty.
-     * @return void
+     * @return never
      */
     public function redirect(string $route, array $query = [], mixed $errors = null): never
     {

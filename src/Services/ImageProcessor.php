@@ -35,7 +35,7 @@ final class ImageProcessor
             return false;
         }
 
-        $mime = $info['mime'] ?? '';
+        $mime = $info['mime'];
 
         $source = match ($mime) {
             'image/jpeg' => @imagecreatefromjpeg($path),
@@ -89,7 +89,7 @@ final class ImageProcessor
         }
 
         [$origWidth, $origHeight] = $info;
-        $mime = $info['mime'] ?? '';
+        $mime = $info['mime'];
 
         // Calculate proportional dimensions.
         $ratio  = min($maxWidth / $origWidth, $maxHeight / $origHeight);
